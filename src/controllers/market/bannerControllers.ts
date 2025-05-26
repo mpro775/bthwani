@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { Slider } from "../../models/market/Slider";
-import { uploadToBunny } from "../../services/bunnyUploader";
 
 export const getSliders = async (_req: Request, res: Response) => {
   try {
