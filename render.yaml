@@ -1,5 +1,5 @@
 services:
-  - type: web
+  - type: web_service      # بدل “web”
     name: bthwani-backend
     env: node
     plan: free
