@@ -35,7 +35,8 @@ export const create = async (req: Request, res: Response) => {
 
     // Ensure image and logo URLs are provided
     if (!body.image || !body.logo) {
-      return res.status(400).json({ message: 'Image and logo URLs are required' });
+       res.status(400).json({ message: 'Image and logo URLs are required' });
+       return;
     }
 
     const data = new DeliveryStore(body);
