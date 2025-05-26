@@ -14,7 +14,7 @@
   },
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "devDependencies": {
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
