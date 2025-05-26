@@ -1,16 +1,21 @@
+// types/express/index.d.ts
 import * as express from 'express';
 
 declare global {
   namespace Express {
     interface Request {
-      // إذا انت تضيف Firebase UID أو أي user object
-      user?: { id: string; /* أو ما يناسبك من الحقول */ };
+      // إضافة حقل user
+      user?: {
+        uid: string;
+        id?: string;
+        // يمكنك إضافة حقول أخرى حسب الحاجة
+      };
 
-      // params عامّة (إذا لم تكتب generic في الراوتر)
+      // params عامة
       params: Record<string, string>;
     }
   }
 }
 
-// أيضاً لو احتجت تحويل Number كدالّة (نادر)
-declare function Number(value: any): number;
+// تأكّد من أن هذا الملف لا يعرِّف دالة Number!
+// (أزل أي declare function Number(...))
