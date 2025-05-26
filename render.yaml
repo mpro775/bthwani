@@ -1,7 +1,7 @@
 services:
-  - type: web_service      # بدل “web”
+  - type: web
     name: bthwani-backend
-    env: node
+    runtime: node    # بدّل env إلى runtime
     plan: free
     branch: main
     buildCommand: npm install && npm run build
