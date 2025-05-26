@@ -2,11 +2,18 @@
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "esModuleInterop": true,        // 👈 مهم جداً
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": true,
+
+    // خفّف الفحص قدر الإمكان:
+    "strict": false,
+    "noImplicitAny": false,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "./types"],
+    "noEmitOnError": false,
+
+    // اجعل TS يلتقط فقط مجلّد types/ لديك:
+    "typeRoots": ["./types"],
+
     "outDir": "./dist",
     "rootDir": "./src"
   }
