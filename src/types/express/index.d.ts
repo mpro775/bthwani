@@ -1,16 +1,21 @@
-import { UserDocument } from "../../src/models/user"; // حسب مكان النموذج عندك
+// types/express/index.d.ts
+import * as express from 'express';
 
 declare global {
   namespace Express {
     interface Request {
+      // إضافة حقل user
       user?: {
-        id: string;
-        
-        email?: string;
-        uid?: string; // في حالة Firebase UID
-        role?: "user" | "admin" | "superadmin" | "delivery";
+        uid: string;
+        id?: string;
+        // يمكنك إضافة حقول أخرى حسب الحاجة
       };
-      userData?: UserDocument; // 👈 نضيف هذا لتجنب الخطأ الثاني
+
+      // params عامة
+      params: Record<string, string>;
     }
   }
 }
+
+// تأكّد من أن هذا الملف لا يعرِّف دالة Number!
+// (أزل أي declare function Number(...))

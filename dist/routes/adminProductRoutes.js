@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adminProductController_1 = require("../controllers/market/adminProductController");
+const verifyFirebase_1 = require("../middleware/verifyFirebase");
+const verifyAdmin_1 = require("../middleware/verifyAdmin");
+const router = (0, express_1.Router)();
+router.get("/", verifyFirebase_1.verifyFirebase, verifyAdmin_1.verifyAdmin, adminProductController_1.adminGetAllProducts);
+router.patch("/:id", verifyFirebase_1.verifyFirebase, verifyAdmin_1.verifyAdmin, adminProductController_1.adminUpdateProduct);
+exports.default = router;

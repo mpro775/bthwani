@@ -139,5 +139,5 @@ defaultAddressId: { type: String, default: null },
 }
 
 interface MulterRequest extends Request {
-  file: Express.Multer.File;
+  file: any;
 }
