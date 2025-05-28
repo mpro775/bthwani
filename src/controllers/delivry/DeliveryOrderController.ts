@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 import { io } from "../..";
 
 export const createOrder = async (req: Request, res: Response) => {
+    console.log('⚙️ Enter createOrder');
+  console.log('🔑 req.user.id =', req.user?.id);
   if (!req.user?.id) {
  res.status(401).json({ message: "Unauthorized" });
 
@@ -19,22 +21,35 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     // 1) حدد المستخدم عبر firebaseUID
     const firebaseUID = req.user.id as string;
+        console.log('🔍 Looking up user by firebaseUID=', firebaseUID);
+
 const user = await User.findOne({ firebaseUID }).session(session);
+    console.log('👤 Found user =', user?._id);
+
 if (!user) {
+        console.log('❌ User not found');
+
   await session.abortTransaction();
    res.status(404).json({ message: "المستخدم غير موجود" });
    return;
 }
 const userId = user._id;
+    console.log('🛒 Fetching cart for userId=', userId);
 
 const cart = await DeliveryCart.findOne({ userId }).session(session);
+    console.log('🛒 Cart =', cart);
+
 if (!cart || cart.items.length === 0) {
+        console.log('❌ Cart empty or missing');
+
   await session.abortTransaction();
    res.status(400).json({ message: "السلة فارغة أو غير موجودة" });
    return;
 }
     // 2) تحقق من العنوان كما قبل
     const { addressId, notes, paymentMethod } = req.body;
+        console.log('📦 Payload addressId, notes, paymentMethod =', addressId, notes, paymentMethod);
+
     const defaultAddressId = (user as any).defaultAddressId as string | undefined;
     const targetId = addressId || defaultAddressId;
     if (!targetId) throw new Error("يرجى اختيار عنوان صالح");

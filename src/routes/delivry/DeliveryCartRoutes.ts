@@ -2,15 +2,17 @@
 import express from 'express';
 import * as controller from '../../controllers/delivry/DeliveryCartController';
 import { verifyFirebase } from '../../middleware/verifyFirebase';
+import { optionalAuth } from '../../middleware/optionalAuth';
 const router = express.Router();
 
+router.use(optionalAuth);
 
 // GET /cart/:cartId   أو  /cart/user/:userId
 router.get('/user/:userId', controller.getCart);
 router.get('/:cartId', controller.getCart);
 
 // POST /cart/add
-router.post('/add', controller.addToCart);
+router.post('/add', controller.addOrUpdateCart);
 
 
 

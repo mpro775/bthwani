@@ -68,21 +68,21 @@ export const updateUserRole = async (req: Request, res: Response) => {
   res.json({ message: "Role updated successfully" });
 };
 
-export const loginDriver = async (req: Request, res: Response) => {
-  const { phone, password } = req.body;
-  try {
-    const driver = await User.findOne({ phone });
-    if (!driver) return res.status(400).json({ message: 'رقم الهاتف غير مسجل' });
+// export const loginDriver = async (req: Request, res: Response) => {
+//   const { phone, password } = req.body;
+//   try {
+//     const driver = await User.findOne({ phone });
+//     if (!driver) return res.status(400).json({ message: 'رقم الهاتف غير مسجل' });
 
-    const isMatch = await driver.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'كلمة المرور غير صحيحة' });
+//     const isMatch = await driver.comparePassword(password);
+//     if (!isMatch) return res.status(400).json({ message: 'كلمة المرور غير صحيحة' });
 
-    const token = jwt.sign({ id: driver._id }, process.env.JWT_SECRET || 'secret123', {
-      expiresIn: '7d'
-    });
+//     const token = jwt.sign({ id: driver._id }, process.env.JWT_SECRET || 'secret123', {
+//       expiresIn: '7d'
+//     });
 
-    res.json({ token, driver });
-  } catch (err: any) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.json({ token, driver });
+//   } catch (err: any) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
