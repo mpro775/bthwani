@@ -1,51 +1,34 @@
-import { User } from "../models/user";
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
+import Favorite from '../models/Favorite';
 
 export const addFavorite = async (req: Request, res: Response) => {
-      if (!req.user?.uid) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-  const user = await User.findOne({ firebaseUID: req.user.uid });
-  if (!user) {
-    res.status(404).json({ message: "User not found" });
+  const { userId } = req.body; // أو من التوكن
+  const { itemId, itemType } = req.body;
+
+  const exists = await Favorite.findOne({ userId, itemId, itemType });
+  if (exists) {
+res.status(200).json({ message: 'Already favorited' });
     return;
   } 
 
-  if (!user.favorites.includes(req.params.itemId)) {
-    user.favorites.push(req.params.itemId);
-    await user.save();
-  }
+  const favorite = new Favorite({ userId, itemId, itemType });
+  await favorite.save();
 
-  res.json({ message: "Added to favorites" });
+  res.status(201).json(favorite);
 };
 
 export const removeFavorite = async (req: Request, res: Response) => {
-      if (!req.user?.uid) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-  const user = await User.findOne({ firebaseUID: req.user.uid });
-   if (!user) {
-     res.status(404).json({ message: "User not found" });
-     return;
-  }
-  user.favorites = user.favorites.filter((id) => id.toString() !== req.params.itemId);
-  await user.save();
+  const { userId, itemId, itemType } = req.body;
 
-  res.json({ message: "Removed from favorites" });
+  await Favorite.findOneAndDelete({ userId, itemId, itemType });
+
+  res.status(200).json({ message: 'Removed from favorites' });
 };
 
-export const getFavorites = async (req: Request, res: Response) => {
-      if (!req.user?.uid) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
+export const getFavoritesByUser = async (req: Request, res: Response) => {
+  const { userId } = req.query;
 
-  const user = await User.findOne({ firebaseUID: req.user.uid }).populate("favorites");
-     if (!user) {
-     res.status(404).json({ message: "User not found" });
-     return;
-  }
-  res.json(user.favorites);
+  const favorites = await Favorite.find({ userId });
+
+  res.status(200).json(favorites);
 };

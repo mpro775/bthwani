@@ -13,6 +13,7 @@ import sliderRoutes from "./routes/sliderRoutes";
 import mediaRoutes from "./routes/mediaRoutes";
 import http from 'http';
 import { Server as IOServer } from 'socket.io';
+import favoriteRoutes from './routes/favoritesRoutes';
 
 import deliveryCategoryRoutes from "./routes/delivry/DeliveryCategoryRoutes";
 import deliveryStoreRoutes from "./routes/delivry/DeliveryStoreRoutes";
@@ -73,6 +74,7 @@ app.use("/delivery/stores", deliveryStoreRoutes);
 app.use("/delivery/products", deliveryProductRoutes);
 app.use("/delivery/cart", deliveryCartRouter);
 app.use("/delivery/order", deliveryOrderRoutes);
+app.use('/users/favorites', favoriteRoutes);
 
 app.use("/delivery/subcategories", deliverySubCategoryRoutes);
 app.use("/delivery/banners", deliveryBannerRoutes);
