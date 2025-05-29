@@ -10,7 +10,10 @@ import {
   getSimilarProducts,
   toggleLikeProduct,
   addComment,
-  adminUpdateStatus
+  adminUpdateStatus,
+  reportProduct,
+  requestBarter,
+  getMyProducts
 } from "../controllers/market/productController";
 import { verifyFirebase } from "../middleware/verifyFirebase";
 import { uploadMedia } from "../middleware/mediaUpload";
@@ -31,8 +34,11 @@ router.delete("/products/:id", verifyFirebase, deleteProduct);
 router.patch("/products/:id/like", verifyFirebase, toggleLikeProduct);
 router.post("/products/:id/comment", verifyFirebase, addComment);
 router.patch("/products/:id/status", verifyFirebase, verifyAdmin, adminUpdateStatus);
+router.get("/products/my-products", verifyFirebase, getMyProducts);
 
+router.post("/products/:id/report", verifyFirebase, reportProduct);
 
+router.post("/products/:id/barter", verifyFirebase, requestBarter);
 
 router.get("/products", getFilteredProducts); // هذا يدعم الفلاتر: category, condition, hasOffer
 router.get("/products/active-offers", getActiveOffers);

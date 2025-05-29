@@ -6,6 +6,8 @@ export interface ProductType extends Document {
   price: number;
   hasOffer: boolean;
   offerPrice?: number;
+    firebaseUID: string; // ✅ أضفه هنا
+
   media: { type: "image" | "video"; uri: string }[];
   description: string;
   category: string;
@@ -54,6 +56,7 @@ const productSchema = new mongoose.Schema({
   offerPrice: Number,
   hasOffer: { type: Boolean, default: false },
   remainingTime: String,
+  firebaseUID: { type: String, required: true }, // ✅ أضفه هنا
 
   media: [mediaSchema],
   description: String,

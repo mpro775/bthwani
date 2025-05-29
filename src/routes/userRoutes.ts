@@ -21,7 +21,6 @@ import {
   getActivityLog
 } from "../controllers/socialController";
 import { updateBloodSettings, updateFreelancerProfile } from '../controllers/extraUserController';
-import { addFavorite, getFavorites, removeFavorite } from '../controllers/favoritesController';
 import { getNotifications, markAllNotificationsRead } from '../controllers/notificationsController';
 
 const router = Router();
@@ -45,9 +44,7 @@ router.get("/:id/following", getFollowing);
 router.get("/activity", verifyFirebase, getActivityLog);
 router.patch("/security/set-pin", verifyFirebase, setPinCode);
 router.patch("/security/verify-pin", verifyFirebase, verifyPinCode);
-router.post("/favorites/:itemId", verifyFirebase, addFavorite);
-router.delete("/favorites/:itemId", verifyFirebase, removeFavorite);
-router.get("/favorites", verifyFirebase, getFavorites);
+
 router.get("/notifications", verifyFirebase, getNotifications);
 router.patch("/notifications/mark-read", verifyFirebase, markAllNotificationsRead);
 router.post("/wallet/transfer", verifyFirebase, transferFunds);

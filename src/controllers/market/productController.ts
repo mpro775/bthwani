@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { Product } from "../../models/market/Product";
 import { User } from "../../models/user";
 import { ProductCategory } from "../../models/market/ProductCategory";
+import { ProductReport } from "../../models/market/ProductReport";
+import { BarterRequest } from "../../models/market/BarterRequest";
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
@@ -43,6 +45,7 @@ try {
       media,
       mainCategory,
       mainCategoryName: category.name,
+        firebaseUID: uid,
       user: {
         name: userDoc.fullName,
         phone: userDoc.phone,
@@ -87,6 +90,22 @@ res.status(404).json({ message: "Product not found" });
   } catch (err) {
     res.status(500).json({ message: "Error fetching product", error: err });
   }
+};
+export const reportProduct = async (req: Request, res: Response) => {
+  const { reason } = req.body;
+  const reporterId = (req as any).user.uid;
+  const productId = req.params.id;
+
+  await ProductReport.create({ productId, reporterId, reason });
+  res.status(200).json({ message: "تم إرسال البلاغ بنجاح" });
+};
+export const requestBarter = async (req: Request, res: Response) => {
+  const requesterId = (req as any).user.uid;
+  const { offeredProductId, message } = req.body;
+  const productId = req.params.id;
+
+  await BarterRequest.create({ productId, offeredProductId, requesterId, message });
+  res.status(200).json({ message: "تم إرسال طلب المقايضة" });
 };
 
 // تعديل منتج (المالك فقط)
@@ -179,6 +198,21 @@ res.status(400).json({ message: "Invalid input" });
     res.json({ message: "Comment added", comments: product.comments });
   } catch (err) {
     res.status(500).json({ message: "Error adding comment", error: err });
+  }
+};
+export const getMyProducts = async (req: any, res: any) => {
+  try {
+const firebaseUID = req.user?.uid;
+    if (!firebaseUID) {
+       res.status(401).json({ message: "Unauthorized" });
+       return;
+    }
+
+const products = await Product.find({ firebaseUID });
+    res.json(products);
+  } catch (error) {
+    console.error("❌ Error fetching user's products:", error);
+    res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات" });
   }
 };
 
