@@ -9,6 +9,8 @@ declare global {
         uid: string;
         id?: string;
         // يمكنك إضافة حقول أخرى حسب الحاجة
+              email?: string;
+      role?: string;
       };
 
       // params عامة
