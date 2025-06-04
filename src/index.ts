@@ -85,10 +85,12 @@ io.on("connection", (socket) => {
 // تفعيل CORS
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: "*", // أو حدد نطاق فرونتك فقط مثل: "https://your-app.onrender.com"
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
+
 
 // تسجيل الولوج للطلبات في الكونسول
 app.use((req, _res, next) => {
