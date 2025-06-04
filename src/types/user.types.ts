@@ -18,6 +18,8 @@ export interface Wallet {
   totalSpent: number;
   totalEarned: number;
   lastUpdated: Date;
+  loyaltyPoints:number;
+  escrow:number;
 }
 
 export interface Security {
@@ -29,7 +31,9 @@ export interface Transaction {
   amount: number;
   type: "credit" | "debit";
   description: string;
-  date: Date;
+  method:string;
+  status:string;
+  date?:Date;
 }
 
 export interface ActivityLog {
@@ -41,7 +45,26 @@ at?: Date;
 export interface FreelancerProfile {
   service?: string;
   bio?: string;
+  availability: {
+    day: string;
+    start: string;
+    end: string;
+  }[];
+  bookings: {
+    userId: string;
+    date: Date;
+    status: string;
+  }[];
+
   portfolioImages: string[];
+  badges?: string[]; 
+    reviews?: {
+    userId: string;
+    rating: number;
+    comment?: string;
+    createdAt?: Date;
+    flagged?: boolean;
+  }[];
 }
 
 export interface NotificationFeed {
@@ -54,17 +77,41 @@ export interface NotificationFeed {
 export interface UserType {
   fullName: string;
   aliasName?: string;
+  emailVerified:boolean;
+    freelancerProfile?: Partial<FreelancerProfile>;
+pushToken:  string ;
+  foundResolvedCount?: number;
+  badges?: string[];
   email?: string;
+  isBlacklisted: boolean;
   phone?: string;
   profileImage?: string;
   role: "user" | "admin" | "superadmin" | "driver";
-
+  bloodRequests: string[]; // ObjectId[] → معرفات الطلبات التي أنشأها
+donationLocation?: {
+  type?: "Point";
+  coordinates?: [number, number];
+  updatedAt?: Date;
+};
+  donationHistory: {
+    requestId: string;
+    date: Date;
+    location: {
+      lat: number;
+      lng: number;
+    };
+  }[];
  isDriver?: boolean;
   isAvailableForDelivery?: boolean;
   currentLocation?: {
     lat: number;
     lng: number;
     updatedAt: Date;
+  };
+    subscription?: {
+    planId: string;
+    startedAt: Date;
+    nextBilling: Date;
   };
   deliveryStats?: {
     deliveredCount: number;
@@ -92,7 +139,7 @@ defaultAddressId: { type: String, default: null },
     sms: boolean;
     push: boolean;
   };
-
+availability:boolean;
   postsCount: number;
   messagesCount: number;
   followersCount: number;
@@ -111,11 +158,9 @@ defaultAddressId: { type: String, default: null },
   // blood
   bloodType?: string;
   isAvailableToDonate?: boolean;
-  bloodRequests: string[]; // ObjectId[]
 
   // freelancer
   isFreelancer?: boolean;
-  freelancerProfile?: FreelancerProfile;
 
   // jobs/bookings
   jobPosts: string[];

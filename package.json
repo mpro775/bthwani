@@ -1,16 +1,22 @@
 {
   "dependencies": {
+    "apollo-server-express": "^3.13.0",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0",
+    "express": "^4.18.2",
     "express-validator": "^7.2.1",
     "firebase-admin": "^13.4.0",
+    "graphql": "^16.11.0",
     "mongoose": "^8.15.0",
     "multer": "^2.0.0",
-    "socket.io": "^4.8.1"
+    "node-cron": "^4.0.7",
+    "node-schedule": "^2.1.1",
+    "nodemailer": "^7.0.3",
+    "socket.io": "^4.8.1",
+    "swagger-jsdoc": "^6.2.8"
   },
   "name": "backend",
   "version": "1.0.0",
@@ -20,14 +26,18 @@
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/multer": "^1.4.12",
-    "@types/node": "^22.15.19",
+    "@types/node": "^22.15.29",
+    "@types/swagger-ui-express": "^4.1.8",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "swagger": "ts-node ./src/swagger.ts",
+    "start": "npm run swagger && ts-node ./src/index.ts",
+  "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

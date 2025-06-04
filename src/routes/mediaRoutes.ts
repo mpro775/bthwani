@@ -1,9 +1,15 @@
-import axios from "axios";
 import { Router } from "express";
 import { verifyFirebase } from "../middleware/verifyFirebase";
 
 const router = Router();
 
+/**
+ * @route POST /sign-upload
+ * @tags Routes
+ * @summary Create sign upload
+ * @security bearerAuth
+ * @return {object} 200 - TODO: success response
+ */
 router.post("/sign-upload", verifyFirebase, async (req, res) => {
   const { filename } = req.body;
 

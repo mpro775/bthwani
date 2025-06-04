@@ -1,14 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import admin from "../config/firebaseAdmin";
 
-export const verifyFirebase = async (req: Request, res: Response, next: NextFunction) => {
+export const verifyFirebase = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : null;
 
   if (!token) {
     console.warn("🔐 No token provided in Authorization header.");
-     res.status(401).json({ message: "Unauthorized: No token provided" });
-     return;
+    res.status(401).json({ message: "Unauthorized: No token provided" });
+    return;
   }
 
   try {
@@ -21,12 +27,14 @@ export const verifyFirebase = async (req: Request, res: Response, next: NextFunc
       uid: decoded.uid,
       email: decoded.email,
       role: decoded.role as any,
+      date: new Date(), // أو decoded.auth_time إذا عندك
     };
+    console.log(">>> verifyFirebase - decoded user:", req.user);
 
     next();
   } catch (error: any) {
     console.error("❌ Firebase verification failed:", error.message || error);
-     res.status(401).json({ message: "Unauthorized: Invalid token", error });
-     return;
+    res.status(401).json({ message: "Unauthorized: Invalid token", error });
+    return;
   }
 };
