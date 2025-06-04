@@ -6,10 +6,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
 import { Server as IOServer } from "socket.io";
-import swaggerUi from "swagger-ui-express";
 
-// استيراد ملف الـ Swagger JSON بعد توليده
-import swaggerDocument from "./docs/swagger-output.json";
+
 
 // استيراد Middleware
 import { verifyTokenSocket } from "./middleware/verifyTokenSocket";
@@ -104,24 +102,8 @@ app.use(express.json());
 // إعداد Swagger Document مع تضمين basePath عبر تعديل خاصية servers
 const API_PREFIX = "/api/v1";
 
-// إنجاز نسخة جديدة من swaggerDocument تتضمن الـ prefix في كل server URL
-const swaggerDocWithPrefix = {
-  ...swaggerDocument,
-  servers: (swaggerDocument.servers || []).map((s) => ({
-    url: `${s.url.replace(/\/+$/, "")}${API_PREFIX}`,
-    description: (s as any).description || "",
-  })),
-};
 
-// ربط Swagger UI لعرض الوثائق
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocWithPrefix, {
-    explorer: true,
-    customSiteTitle: "وثائق API - بثواني",
-  })
-);
+
 
 // مسارات الـ API
 
