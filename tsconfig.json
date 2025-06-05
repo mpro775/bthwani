@@ -1,24 +1,19 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
+    "target": "es6",
+    "module": "commonjs",
+
     "esModuleInterop": true,
     "resolveJsonModule": true,
-
     "forceConsistentCasingInFileNames": true,
-
-    // خفّف الفحص قدر الإمكان:
     "strict": false,
     "noImplicitAny": false,
     "skipLibCheck": true,
     "noEmitOnError": false,
-
-    // اجعل TS يلتقط فقط مجلّد types/ لديك:
-    "typeRoots": ["./src/types", "./node_modules/@types"],
-
+    "typeRoots": ["./types"],
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src/**/*.ts", "src/**/*.json", "src/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src"],   // ✅ تبسيط لتشمل كل الملفات
+  "exclude": ["node_modules", "dist"]
 }
