@@ -45,7 +45,7 @@ const router = express.Router();
  *       500:
  *         description: خطأ في الخادم أثناء معالجة الشحنة.
  */
-router.post("/topup", topupHandler);
+router.post("/", topupHandler);
 
 /**
  * @swagger

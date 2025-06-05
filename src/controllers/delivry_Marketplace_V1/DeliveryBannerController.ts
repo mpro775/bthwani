@@ -17,25 +17,49 @@ export const getAll = async (req: Request, res: Response) => {
   try {
     const now = new Date();
 
-    const data = await DeliveryBanner.find({
-      isActive: true,
-      $or: [
-        { startDate: null, endDate: null },
-        {
-          startDate: { $lte: now },
-          endDate: { $gte: now },
-        },
-        {
-          startDate: { $lte: now },
-          endDate: { $exists: false },
-        },
-        {
-          startDate: { $exists: false },
-          endDate: { $gte: now },
-        },
-      ],
-    }).sort({ order: 1, createdAt: -1 });
+    const isAdmin = req.user?.role === "admin" || req.user?.role === "superadmin";
 
+    const data = isAdmin
+      ? await DeliveryBanner.find().sort({ createdAt: -1 }) // 🟢 كل البانرات
+      : await DeliveryBanner.find({
+          isActive: true,
+          $or: [
+            {
+              $and: [
+                { startDate: { $exists: false } },
+                { endDate: { $exists: false } },
+              ],
+            },
+            {
+              $and: [
+                { startDate: { $lte: now } },
+                { endDate: { $gte: now } },
+              ],
+            },
+            {
+              $and: [
+                { startDate: { $lte: now } },
+                { endDate: { $exists: false } },
+              ],
+            },
+            {
+              $and: [
+                { startDate: { $exists: false } },
+                { endDate: { $gte: now } },
+              ],
+            },
+          ],
+        }).sort({ order: 1, createdAt: -1 });
+
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getAllAdmin = async (req: Request, res: Response) => {
+  try {
+    const data = await DeliveryBanner.find().sort({ createdAt: -1 });
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

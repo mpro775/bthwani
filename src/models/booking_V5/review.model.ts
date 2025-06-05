@@ -10,4 +10,4 @@ const ReviewSchema = new Schema({
   flagged: { type: Boolean, default: false }
 }, { timestamps: true });
 
-export default mongoose.model("Review", ReviewSchema);
+export default mongoose.model("Reviewv5", ReviewSchema);

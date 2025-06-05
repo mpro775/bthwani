@@ -6,6 +6,7 @@ import { sendPushNotification } from "../../utils/push";
 import { User, UserDocument } from "../../models/user"; // تأكد من الاستيراد
 import { AdminLog } from "../../models/admin/adminLog.model";
 import { WithdrawalRequest } from "../../models/Wallet_V8/WithdrawalRequest";
+import bookingModel from "../../models/booking_V5/booking.model";
 
 export const createBooking = async (req: Request, res: Response) => {
   const { date } = req.body;
@@ -156,5 +157,61 @@ export const getBookingById = async (req: Request, res: Response) => {
     res.json(booking);
   } catch (error) {
     res.status(500).json({ message: "خطأ في الخادم", error });
+  }
+};
+
+export const getAllBookings = async (req: Request, res: Response) => {
+  try {
+    // 1. نبحث عن كل الحجوزات، ونعمل populate لخدمة BookingService
+    const bookings = await bookingModel.find()
+      .populate({
+        path: "serviceId",
+        model: "BookingService", // هذا هو اسم الموديل في mongoose.model("BookingService", ...)
+        select: "title type location price media availability categories",
+      })
+      .lean();
+
+    /**
+     * 2. نفوِّر كل عنصر في bookings لنُعيد المعلومات بالشكل الذي يتوقعه الواجهة:
+     *    - id: _id الخاص بالحجز
+     *    - title/type/price/media/... مأخوذة من خدمة BookingService
+     *    - availableHours: تحويل availability إلى مصفوفة نصوص مثل ["09:00-10:00", ...]
+     *    - governorate: city أو region من موقع الخدمة
+     *    - amenities: نستخدم مثلاً الحقل categories كقائمة amenities
+     */
+    const formatted = bookings.map((b: any) => {
+      const svc = b.serviceId || {};
+      // استخراج الأوقات المتاحة في مصفوفة نصوص
+      const availableHours: string[] =
+        Array.isArray(svc.availability)
+          ? svc.availability.flatMap((a: any) =>
+              Array.isArray(a.slots)
+                ? a.slots.map((slot: any) => `${slot.start}-${slot.end}`)
+                : []
+            )
+          : [];
+
+      return {
+        id: b._id.toString(),
+        title: svc.title || "",
+        type: svc.type || "",
+        governorate: svc.location?.city || "",
+        price: svc.price || 0,
+        // إذا كنت تريد إظهار تقييم (rating) من الـ Review، يمكن إضافته لاحقًا
+        rating: 0,
+        availableHours,
+        media: Array.isArray(svc.media) ? svc.media : [],
+        amenities: Array.isArray(svc.categories) ? svc.categories : [],
+      };
+    });
+
+     res.json(formatted);
+     return;
+  } catch (error: any) {
+    console.error("Error in getAllBookings:", error);
+     res
+      .status(500)
+      .json({ message: "خطأ في الخادم أثناء جلب كل الحجوزات", error: error.message });
+      return;
   }
 };

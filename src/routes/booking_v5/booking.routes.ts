@@ -2,6 +2,7 @@
 
 import express from "express";
 import {
+  getAllBookings,
   getBookingById,
   updateBookingStatus,
 } from "../../controllers/booking_V5/booking.controller";
@@ -131,6 +132,7 @@ router.get("/service/:id", verifyFirebase, getServiceBookings);
  *         description: خطأ في الخادم أثناء تحديث حالة الحجز.
  */
 router.patch("/:id/status", verifyFirebase, updateBookingStatus);
+router.get("/", verifyFirebase, getAllBookings);
 
 /**
  * @swagger

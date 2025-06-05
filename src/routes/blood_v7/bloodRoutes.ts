@@ -9,6 +9,7 @@ import {
 import { verifyFirebase } from "../../middleware/verifyFirebase";
 import { BloodMessage } from "../../models/blood_V7/BloodMessageSchema";
 import { User } from "../../models/user";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -131,16 +132,27 @@ router.post("/blood/complete", verifyFirebase, markDonationComplete);
  */
 router.post("/blood/messages", verifyFirebase, async (req, res) => {
   const { requestId, text } = req.body;
-  const senderId = req.user.id;
-
   if (!text || !requestId) {
-    res.status(400).json({ message: "بيانات ناقصة" });
-    return;
+     res.status(400).json({ message: "بيانات ناقصة" });
+     return;
   }
-
-  const message = await BloodMessage.create({ requestId, text, senderId });
-  res.json(message);
+  if (!mongoose.Types.ObjectId.isValid(requestId)) {
+     res.status(400).json({ message: "requestId غير صالح" });
+     return;
+  }
+  // أكمل الإنشاء
+  try {
+    const senderId = req.user.id;
+    const message = await BloodMessage.create({ requestId, text, senderId });
+     res.json(message);
+     return;
+  } catch (err) {
+    console.error(err);
+     res.status(500).json({ message: "خطأ في السيرفر", error: err });
+     return;
+  }
 });
+
 
 /**
  * @swagger
@@ -177,10 +189,22 @@ router.post("/blood/messages", verifyFirebase, async (req, res) => {
  *         description: خطأ في الخادم أثناء جلب الرسائل.
  */
 router.get("/blood/messages/:requestId", verifyFirebase, async (req, res) => {
-  const messages = await BloodMessage.find({
-    requestId: req.params.requestId,
-  }).sort({ sentAt: 1 });
-  res.json(messages);
+  const { requestId } = req.params;
+  // نتحقق أولاً أنّ requestId غير فارغ وصالح كبنية ObjectId
+  if (!requestId || !mongoose.Types.ObjectId.isValid(requestId)) {
+     res.status(400).json({ message: "requestId غير صالح" });
+     return;
+  }
+
+  try {
+    const messages = await BloodMessage.find({ requestId }).sort({ sentAt: 1 });
+     res.json(messages);
+     return;
+  } catch (err) {
+    console.error(err);
+     res.status(500).json({ message: "خطأ في السيرفر", error: err });
+     return;
+  }
 });
 
 /**
@@ -206,6 +230,6 @@ router.get("/blood/messages/:requestId", verifyFirebase, async (req, res) => {
  *       500:
  *         description: خطأ في الخادم أثناء جلب المتبرعين.
  */
-router.get("/blood/donors", verifyFirebase, getAllBloodDonors);
+router.get("/blood/donors",  getAllBloodDonors);
 
 export default router;

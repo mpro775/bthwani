@@ -2,10 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import admin from "../config/firebaseAdmin";
 
 export const verifyFirebase = async (
+  
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
+    console.log("=== verifyFirebase: بدأ التحقق ===");
+  console.log("Authorization header:", req.headers.authorization);
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith("Bearer ")
     ? authHeader.split(" ")[1]

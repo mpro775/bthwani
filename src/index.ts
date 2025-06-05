@@ -6,10 +6,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
 import { Server as IOServer } from "socket.io";
-import swaggerUi from "swagger-ui-express";
 
-// استيراد ملف الـ Swagger JSON بعد توليده
-import swaggerDocument from "./docs/swagger-output.json";
 
 // استيراد Middleware
 import { verifyTokenSocket } from "./middleware/verifyTokenSocket";
@@ -22,7 +19,6 @@ import adminRoutes from "./routes/admin/adminRoutes";
 import adminWithdrawalRoutes from "./routes/admin/admin.withdrawal.routes";
 
 import userRoutes from "./routes/userRoutes";
-import userAvatarRoutes from "./routes/userAvatarRoutes";
 import favoriteRoutes from "./routes/favoritesRoutes";
 
 import marketRoutes from "./routes/haraj_v2/marketRoutes";
@@ -39,6 +35,9 @@ import topupRoutes from "./routes/Wallet_V8/topupRoutes";
 import freelancerRoutes from "./routes/job_v3/freelancerRoutes";
 import opportunityRoutes from "./routes/job_v3/opportunityRoutes";
 import bookingRoutes from "./routes/job_v3/bookingRoutes";
+import bookingv5Routes from "./routes/booking_v5/booking.routes";
+import bookingv5MessageRoutes from "./routes/booking_v5/bookingMessage.routes";
+import bookingv5ServicesRoutes from "./routes/booking_v5/bookingService.routes";
 import reviewRoutes from "./routes/job_v3/reviewRoutes";
 import miscRoutes from "./routes/job_v3/miscRoutes";
 
@@ -56,6 +55,8 @@ import deliveryBannerRoutes from "./routes/delivry_marketplace_v1/DeliveryBanner
 import deliveryCartRouter from "./routes/delivry_marketplace_v1/DeliveryCartRoutes";
 import deliveryOrderRoutes from "./routes/delivry_marketplace_v1/DeliveryOrderRoutes";
 import bloodRoutes from "./routes/blood_v7/bloodRoutes";
+import absherRoutes from "./routes/absher_V9/absher.routes";
+import charityRoutes from "./routes/charity_v10/charity.routes";
 
 dotenv.config();
 
@@ -102,24 +103,6 @@ app.use(express.json());
 // إعداد Swagger Document مع تضمين basePath عبر تعديل خاصية servers
 const API_PREFIX = "/api/v1";
 
-// إنجاز نسخة جديدة من swaggerDocument تتضمن الـ prefix في كل server URL
-const swaggerDocWithPrefix = {
-  ...swaggerDocument,
-  servers: (swaggerDocument.servers || []).map((s) => ({
-    url: `${s.url.replace(/\/+$/, "")}${API_PREFIX}`,
-    description: (s as any).description || "",
-  })),
-};
-
-// ربط Swagger UI لعرض الوثائق
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocWithPrefix, {
-    explorer: true,
-    customSiteTitle: "وثائق API - بثواني",
-  })
-);
 
 // مسارات الـ API
 
@@ -159,7 +142,13 @@ app.use(`${API_PREFIX}/delivery/banners`, deliveryBannerRoutes);
 // قسم طلبات وسائق التوصيل
 app.use(`${API_PREFIX}/deliveryapp/withdrawals`, driverWithdrawalRoutes);
 
-app.use(`${API_PREFIX}/blood`, bloodRoutes);
+app.use(`${API_PREFIX}/`, bloodRoutes);
+app.use(`${API_PREFIX}/`, charityRoutes);
+
+
+app.use(`${API_PREFIX}/bookings`, bookingv5Routes);
+app.use(`${API_PREFIX}/bookings/`, bookingv5MessageRoutes);
+app.use(`${API_PREFIX}/bookings/`, bookingv5ServicesRoutes);
 
 // قسم التاجر
 app.use(`${API_PREFIX}/vendor/orders`, vendorOrderRoutes);
@@ -171,6 +160,8 @@ app.use(`${API_PREFIX}/job/booking`, bookingRoutes);
 app.use(`${API_PREFIX}/job/review`, reviewRoutes);
 app.use(`${API_PREFIX}/job/opportunities`, opportunityRoutes);
 app.use(`${API_PREFIX}/job`, miscRoutes);
+
+app.use(`${API_PREFIX}/`, absherRoutes);
 
 // قسم أدوات الديباغ
 app.get(`${API_PREFIX}/debug/uploads`, (_, res) => {

@@ -2,19 +2,31 @@
 import { Request, Response } from "express";
 import { ProfessionalRequest } from "../../models/absher_V9/professionalRequest.model";
 import { WalletTransaction } from "../../models/Wallet_V8/wallet.model";
-
+import { User } from "../../models/user";
 export const submitRequest = async (req: Request, res: Response) => {
+  console.log("=== وصول طلب Absher ===");
+  console.log("Headers:", req.headers);
+  console.log("req.user:", req.user);
+  console.log("req.body:", req.body);
+
   try {
     const { category, subcategory, location, details } = req.body;
-    const userId = req.user?.id;
+    const firebaseUID = req.user?.uid;
 
-    if (!userId || !category || !location || !details) {
-      res.status(400).json({ message: "بيانات ناقصة" });
-      return;
+    if (!firebaseUID || !category || !location || !details) {
+      console.log("Missing fields:", { firebaseUID, category, location, details });
+       res.status(400).json({ message: "بيانات ناقصة" });
+       return;
+    }
+
+    const user = await User.findOne({ firebaseUID });
+    if (!user) {
+       res.status(404).json({ message: "المستخدم غير موجود" });
+       return;
     }
 
     const request = new ProfessionalRequest({
-      userId,
+      userId: user._id, // ✅ استخدم ObjectId الحقيقي
       category,
       subcategory,
       location,
@@ -22,19 +34,39 @@ export const submitRequest = async (req: Request, res: Response) => {
     });
 
     await request.save();
-    res.status(201).json({ message: "تم إرسال الطلب", request });
+    console.log("✅ تم حفظ الطلب:", request._id);
+     res.status(201).json({ message: "تم إرسال الطلب", request });
+     return;
   } catch (error) {
-    res.status(500).json({ message: "حدث خطأ أثناء الإرسال", error });
+    console.error("❌ خطأ في submitRequest:", error);
+     res.status(500).json({ message: "حدث خطأ أثناء الإرسال", error });
+     return;
   }
 };
-
 export const getMyRequests = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const requests = await ProfessionalRequest.find({ userId });
-    res.json({ requests });
+    const firebaseUID = req.user?.uid;
+
+    if (!firebaseUID) {
+       res.status(401).json({ message: "Unauthorized" });
+       return;
+    }
+
+    const user = await User.findOne({ firebaseUID });
+
+    if (!user) {
+       res.status(404).json({ message: "المستخدم غير موجود" });
+       return;
+    }
+
+    const requests = await ProfessionalRequest.find({ userId: user._id });
+
+     res.json({ requests });
+     return;
   } catch (error) {
-    res.status(500).json({ message: "فشل في جلب البيانات", error });
+    console.error("❌ خطأ أثناء جلب الطلبات:", error);
+     res.status(500).json({ message: "فشل في جلب البيانات", error });
+     return;
   }
 };
 
