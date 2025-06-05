@@ -6,7 +6,6 @@ import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
 import { Server as IOServer } from "socket.io";
-import swaggerUi from "swagger-ui-express";
 
 
 // استيراد Middleware
@@ -107,23 +106,9 @@ app.use(express.json());
 const API_PREFIX = "/api/v1";
 
 // إنجاز نسخة جديدة من swaggerDocument تتضمن الـ prefix في كل server URL
-const swaggerDocWithPrefix = {
-  ...swaggerDocument,
-  servers: (swaggerDocument.servers || []).map((s) => ({
-    url: `${s.url.replace(/\/+$/, "")}${API_PREFIX}`,
-    description: (s as any).description || "",
-  })),
-};
+
 
 // ربط Swagger UI لعرض الوثائق
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocWithPrefix, {
-    explorer: true,
-    customSiteTitle: "وثائق API - بثواني",
-  })
-);
 
 // مسارات الـ API
 
