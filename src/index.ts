@@ -44,6 +44,14 @@ import employeeRoutes from "./routes/er/employee.routes";
 import attendanceRoutes from "./routes/er/attendance.routes";
 import leaveRequestRoutes from "./routes/er/leaveRequest.routes";
 import performanceGoalRoutes from "./routes/er/performanceGoal.routes";
+import accountRoutes from "./routes/er/account.routes";
+import accountPayableRoutes from "./routes/er/accountPayable.routes";
+import accountReceivableRoutes from "./routes/er/accountReceivable.routes";
+import ledgerEntryRoutes from "./routes/er/ledgerEntry.routes";
+import budgetRoutes from "./routes/er/budget.routes";
+import assetRoutes from "./routes/er/asset.routes";
+import payrollRoutes from "./routes/er/payroll.routes";
+import dashboardRoutes from "./routes/er/dashboard.routes";
 import pricingStrategyRoutes from "./routes/delivry_marketplace_v1/pricingStrategy";
 
 dotenv.config();
@@ -110,6 +118,15 @@ app.use(`${API_PREFIX}/employees`, employeeRoutes);
 app.use(`${API_PREFIX}/attendance`, attendanceRoutes);
 app.use(`${API_PREFIX}/leaves`, leaveRequestRoutes);
 app.use(`${API_PREFIX}/goals`, performanceGoalRoutes);
+// قسم الإدارة المالية
+app.use(`${API_PREFIX}/accounts`, accountRoutes);
+app.use(`${API_PREFIX}/payables`, accountPayableRoutes);
+app.use(`${API_PREFIX}/receivables`, accountReceivableRoutes);
+app.use(`${API_PREFIX}/ledger`, ledgerEntryRoutes);
+app.use(`${API_PREFIX}/budgets`, budgetRoutes);
+app.use(`${API_PREFIX}/assets`, assetRoutes);
+app.use(`${API_PREFIX}/payroll`, payrollRoutes);
+app.use(`${API_PREFIX}/dashboard`, dashboardRoutes);
 
 // قسم شحن المحفظة
 app.use(`${API_PREFIX}/topup`, topupRoutes);
