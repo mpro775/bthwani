@@ -47,6 +47,36 @@ export const create = async (req: Request, res: Response) => {
       delete body.lng;
     }
 
+    if (typeof body.phones === "string") {
+      try {
+        body.phones = JSON.parse(body.phones);
+      } catch {
+        body.phones = [body.phones];
+      }
+    }
+    if (body.defaultPhone && Array.isArray(body.phones)) {
+      if (!body.phones.includes(body.defaultPhone)) {
+        body.phones.push(body.defaultPhone);
+      }
+    } else if (Array.isArray(body.phones) && body.phones.length > 0) {
+      body.defaultPhone = body.phones[0];
+    }
+
+    if (typeof body.phones === "string") {
+      try {
+        body.phones = JSON.parse(body.phones);
+      } catch {
+        body.phones = [body.phones];
+      }
+    }
+    if (body.defaultPhone && Array.isArray(body.phones)) {
+      if (!body.phones.includes(body.defaultPhone)) {
+        body.phones.push(body.defaultPhone);
+      }
+    } else if (Array.isArray(body.phones) && body.phones.length > 0) {
+      body.defaultPhone = body.phones[0];
+    }
+
     // Ensure image and logo URLs are provided
     if (!body.image || !body.logo) {
       res.status(400).json({ message: "Image and logo URLs are required" });

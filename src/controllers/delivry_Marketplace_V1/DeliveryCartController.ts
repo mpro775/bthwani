@@ -19,12 +19,14 @@ interface RemoveItemParams {
   productId: string;
 }
 interface SingleItemPayload {
-  productId: string;
+  productId?: string;
   name: string;
   price: number;
   quantity: number;
   storeId: string;
   image?: string;
+  isCustom?: boolean;
+  customPrice?: number;
 }
 
 interface MultiItemPayload {
@@ -56,6 +58,8 @@ export const addOrUpdateCart = async (req: Request, res: Response) => {
         storeId: sId,
         image,
         cartId: cId,
+        isCustom,
+        customPrice,
       } = req.body as SingleItemPayload & { cartId?: string };
       itemsArr = [
         {
@@ -65,6 +69,8 @@ export const addOrUpdateCart = async (req: Request, res: Response) => {
           quantity,
           storeId: sId,
           image,
+          isCustom,
+          customPrice,
         },
       ];
       storeId = sId;
@@ -105,7 +111,8 @@ export const addOrUpdateCart = async (req: Request, res: Response) => {
     if (!cart) {
       // إنشاء سلة جديدة
       const total = itemsArr.reduce(
-        (sum, it) => sum + it.price * it.quantity,
+        (sum, it) =>
+          sum + (it.isCustom ? 0 : it.price * it.quantity),
         0
       );
       cart = new DeliveryCart({
@@ -119,14 +126,16 @@ export const addOrUpdateCart = async (req: Request, res: Response) => {
       // تحديث السلة الحالية
       for (const it of itemsArr) {
         const idx = cart.items.findIndex(
-          (i) => i.product.toString() === it.productId
+          (i) => i.product?.toString() === it.productId
         );
         if (idx > -1) {
           cart.items[idx].quantity += it.quantity;
         } else {
           cart.items.push(it as any);
         }
-        cart.total += it.price * it.quantity;
+        if (!it.isCustom) {
+          cart.total += it.price * it.quantity;
+        }
       }
     }
 
@@ -168,7 +177,9 @@ export const updateCartItemQuantity = async (req: Request, res: Response) => {
     }
 
     // إيجاد العنصر وتعديله
-    const idx = cart.items.findIndex(i => i.product.toString() === productId);
+    const idx = cart.items.findIndex(
+      (i) => i.product?.toString() === productId
+    );
     if (idx === -1) {
        res.status(404).json({ message: "Item not found in cart" });
        return;
@@ -178,7 +189,10 @@ export const updateCartItemQuantity = async (req: Request, res: Response) => {
     cart.items[idx].quantity = quantity;
 
     // إعادة حساب الإجمالي
-    cart.total = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    cart.total = cart.items.reduce(
+      (sum, item) => sum + (item.isCustom ? 0 : item.price * item.quantity),
+      0
+    );
 
     await cart.save();
      res.json(cart);
@@ -284,7 +298,7 @@ export const getAbandonedCarts = async (_: Request, res: Response) => {
     const THIRTY_MINUTES_AGO = new Date(Date.now() - 30 * 60 * 1000);
     const carts = await DeliveryCart.find({
       createdAt: { $lt: THIRTY_MINUTES_AGO },
-    });
+    }).populate("user", "fullName phone");
     res.json(carts);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -370,8 +384,11 @@ export const removeItem = async (
     res.status(404).json({ message: "سلة غير موجودة" });
     return;
   }
-  cart.items = cart.items.filter((i) => i.product.toString() !== productId);
-  cart.total = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  cart.items = cart.items.filter((i) => i.product?.toString() !== productId);
+  cart.total = cart.items.reduce(
+    (sum, i) => sum + (i.isCustom ? 0 : i.price * i.quantity),
+    0
+  );
   await cart.save();
   res.json(cart);
 };

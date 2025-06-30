@@ -1,12 +1,14 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICartItem {
-  product: mongoose.Types.ObjectId;
+  product?: mongoose.Types.ObjectId;
   name: string;
   price: number;
   quantity: number;
   store: mongoose.Types.ObjectId;
   image?: string;
+  isCustom?: boolean;
+  customPrice?: number;
 }
 
 export interface ICart extends Document {
@@ -16,14 +18,19 @@ export interface ICart extends Document {
   total: number;
 }
 
-const cartItemSchema = new Schema<ICartItem>({
-  product:  { type: Schema.Types.ObjectId, ref: "DeliveryProduct", required: true },
-  name:     { type: String, required: true },
-  price:    { type: Number, required: true },
-  quantity: { type: Number, required: true },
-  store:    { type: Schema.Types.ObjectId, ref: "DeliveryStore", required: true },
-  image:    { type: String },
-}, { _id: false });
+const cartItemSchema = new Schema<ICartItem>(
+  {
+    product: { type: Schema.Types.ObjectId, ref: "DeliveryProduct" },
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+    store: { type: Schema.Types.ObjectId, ref: "DeliveryStore", required: true },
+    image: { type: String },
+    isCustom: { type: Boolean, default: false },
+    customPrice: { type: Number },
+  },
+  { _id: false }
+);
 
 const cartSchema = new Schema<ICart>({
   user:  { type: Schema.Types.ObjectId, ref: "User", required: true },
