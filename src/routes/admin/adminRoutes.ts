@@ -2,8 +2,10 @@
 
 import { Router, Request, Response } from "express";
 import {
+  createAdminUser,
   getAllUsers,
   getUserById,
+  updateAdminUser,
   updateUserAdmin,
   updateUserRole,
 } from "../../controllers/admin/adminUserController";
@@ -82,6 +84,8 @@ router.get("/users", verifyFirebase, getAllUsers);
  *         description: خطأ في الخادم أثناء جلب تفاصيل المستخدم.
  */
 router.get("/users/:id", verifyFirebase, getUserById);
+router.post("/users", verifyFirebase, verifyAdmin, createAdminUser);
+router.patch("/admin-users/:id", verifyFirebase, verifyAdmin, updateAdminUser);
 
 /**
  * @swagger

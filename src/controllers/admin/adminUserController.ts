@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
 import { User } from "../../models/user";
+import {
+  AdminUser,
+  AdminRole,
+  ModuleName,
+  ModulePermissions,
+} from "../../models/admin/AdminUser";
 
 // ✅ عرض كل المستخدمين
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -56,12 +62,12 @@ export const updateUserAdmin = async (req: Request, res: Response) => {
 };
 export const getAdminStats = async (req: Request, res: Response) => {
   try {
-    const total    = await User.countDocuments();
-    const admins   = await User.countDocuments({ role: "admin" });
+    const total = await User.countDocuments();
+    const admins = await User.countDocuments({ role: "admin" });
     const superads = await User.countDocuments({ role: "superadmin" });
-    const users    = await User.countDocuments({ role: "user" });
-    const active   = await User.countDocuments({ isBlocked: false });
-    const blocked  = await User.countDocuments({ isBlocked: true });
+    const users = await User.countDocuments({ role: "user" });
+    const active = await User.countDocuments({ isBlocked: false });
+    const blocked = await User.countDocuments({ isBlocked: true });
 
     res.json({
       total,
@@ -69,7 +75,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
       users,
       active,
       blocked,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     });
   } catch (err) {
     console.error("getAdminStats error:", err);
@@ -90,6 +96,51 @@ export const updateUserRole = async (req: Request, res: Response) => {
   res.json({ message: "Role updated successfully" });
 };
 
+export const createAdminUser = async (req: any, res: any) => {
+  try {
+    const { username, password, roles, permissions } = req.body;
+
+    // تأكد من أن roles مصفوفة، وإلا اجعلها ADMIN افتراضيًا
+    const userRoles =
+      Array.isArray(roles) && roles.length > 0 ? roles : [AdminRole.ADMIN];
+
+    // تأكد من أن permissions كائن Map أو Object
+    const user = new AdminUser({
+      username,
+      password,
+      roles: userRoles,
+      permissions: permissions || {},
+    });
+
+    await user.save();
+    res.status(201).json({ message: "Admin user created", user });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ message: "Error creating admin user", error: err.message });
+  }
+};
+export const updateAdminUser = async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const { username, password, roles, permissions } = req.body;
+
+    const user = await AdminUser.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Admin user not found" });
+    }
+
+    if (username) user.username = username;
+    if (password) user.password = password;
+    if (roles) user.roles = roles;
+    if (permissions) user.permissions = permissions;
+
+    await user.save();
+    res.json({ message: "Admin user updated", user });
+  } catch (err: any) {
+    res.status(500).json({ message: "Error updating admin user", error: err.message });
+  }
+};
 // export const loginDriver = async (req: Request, res: Response) => {
 //   const { phone, password } = req.body;
 //   try {
