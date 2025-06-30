@@ -5,6 +5,7 @@ import { User } from "../../models/user";
 import geolib from "geolib";
 import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
 import PricingStrategy from "../../models/delivry_Marketplace_V1/PricingStrategy";
+import DeliveryCategory from "../../models/delivry_Marketplace_V1/DeliveryCategory";
 import { calculateDeliveryPrice } from "../../utils/deliveryPricing";
 
 interface CartItemPayload {
@@ -315,36 +316,56 @@ res.status(400).json({ message: "السلة فارغة" });
     } 
 
     // جلب الاستراتيجية
-    const strategy = await PricingStrategy.findOne({});
-    if (!strategy) throw new Error("Pricing strategy not configured");
+    const globalStrategy = await PricingStrategy.findOne({});
+    if (!globalStrategy) throw new Error("Pricing strategy not configured");
 
     let fee = 0;
     if (deliveryMode === "unified") {
-      // استخدم أقرب متجر فقط
       const storeId = cart.items[0].store;
       const store = await DeliveryStore.findById(storeId);
+      const cat = store ? await DeliveryCategory.findById(store.category) : null;
+      let strat = globalStrategy;
+      if (store?.pricingStrategy) {
+        strat = (await PricingStrategy.findById(store.pricingStrategy)) || globalStrategy;
+      } else if (cat?.pricingStrategy) {
+        strat = (await PricingStrategy.findById(cat.pricingStrategy)) || globalStrategy;
+      }
       const distKm =
         geolib.getDistance(
           { latitude: store.location.lat, longitude: store.location.lng },
           { latitude: address.location.lat, longitude: address.location.lng }
         ) / 1000;
-      fee = calculateDeliveryPrice(distKm, strategy);
+      let f = calculateDeliveryPrice(distKm, strat);
+      if (store && !store.takeCommission && store.deliveryDiscountRate) {
+        f = f * (1 - store.deliveryDiscountRate);
+      }
+      fee = f;
     } else {
-      // لكل متجر ضمن السلة
-   const grouped = cart.items.reduce((map, i) => {
-  const key = i.store.toString();           // ⇐ هنا
-  (map[key] = map[key] || []).push(i);
-  return map;
-}, {} as Record<string, typeof cart.items>);
+      const grouped = cart.items.reduce((map, i) => {
+        const key = i.store.toString();
+        (map[key] = map[key] || []).push(i);
+        return map;
+      }, {} as Record<string, typeof cart.items>);
 
       for (const storeId of Object.keys(grouped)) {
         const store = await DeliveryStore.findById(storeId);
+        const cat = store ? await DeliveryCategory.findById(store.category) : null;
+        let strat = globalStrategy;
+        if (store?.pricingStrategy) {
+          strat = (await PricingStrategy.findById(store.pricingStrategy)) || globalStrategy;
+        } else if (cat?.pricingStrategy) {
+          strat = (await PricingStrategy.findById(cat.pricingStrategy)) || globalStrategy;
+        }
         const distKm =
           geolib.getDistance(
             { latitude: store.location.lat, longitude: store.location.lng },
             { latitude: address.location.lat, longitude: address.location.lng }
           ) / 1000;
-        fee += calculateDeliveryPrice(distKm, strategy);
+        let f = calculateDeliveryPrice(distKm, strat);
+        if (store && !store.takeCommission && store.deliveryDiscountRate) {
+          f = f * (1 - store.deliveryDiscountRate);
+        }
+        fee += f;
       }
     }
 

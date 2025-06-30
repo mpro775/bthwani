@@ -100,6 +100,13 @@ router.post(
   controller.createOrder
 );
 
+router.post(
+  "/admin",
+  verifyFirebase,
+  verifyAdmin,
+  controller.adminCreateOrder
+);
+
 /**
  * @swagger
  * /delivery/orders/vendor/orders:

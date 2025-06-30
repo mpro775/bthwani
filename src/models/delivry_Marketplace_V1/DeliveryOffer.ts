@@ -5,6 +5,7 @@ export interface IDeliveryOffer extends Document {
   target: 'product' | 'store' | 'category';
   value: number;
   valueType: 'percentage' | 'fixed';
+  image?: string;
   product?: mongoose.Types.ObjectId;
   store?: mongoose.Types.ObjectId;
   category?: mongoose.Types.ObjectId;
@@ -18,6 +19,7 @@ const offerSchema = new Schema<IDeliveryOffer>({
   target:     { type: String, enum: ['product','store','category'], required: true },
   value:      { type: Number, required: true },
   valueType:  { type: String, enum: ['percentage','fixed'], required: true },
+  image:      { type: String },
   product:    { type: Schema.Types.ObjectId, ref: "DeliveryProduct" },
   store:      { type: Schema.Types.ObjectId, ref: "DeliveryStore" },
   category:   { type: Schema.Types.ObjectId, ref: "DeliveryCategory" },
