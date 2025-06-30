@@ -5,6 +5,7 @@ import { User } from "../../models/user";
 import mongoose from "mongoose";
 import { io } from "../..";
 import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
+import DeliveryCategory from "../../models/delivry_Marketplace_V1/DeliveryCategory";
 import Driver from "../../models/Driver_app/driver";
 import { calculateDeliveryPrice } from "../../utils/deliveryPricing";
 import geolib from "geolib";
@@ -61,16 +62,22 @@ export const createOrder = async (req: Request, res: Response) => {
     }
 
     // 7. جلب استراتيجية التسعير (شرائح + سعر افتراضي)
-    const strategy = await PricingStrategy.findOne({}).session(session);
-    if (!strategy) throw new Error("استراتيجية التسعير غير مكوَّنة");
+    const globalStrategy = await PricingStrategy.findOne({}).session(session);
+    if (!globalStrategy) throw new Error("استراتيجية التسعير غير مكوَّنة");
 
     // 8. حساب رسوم التوصيل
     let deliveryFee = 0;
     const stores = Object.keys(grouped);
     if (deliveryMode === "unified") {
-      // استخدم أول متجر فقط
       const s = await DeliveryStore.findById(stores[0]).session(session);
       if (!s) throw new Error("المتجر غير موجود");
+      const cat = await DeliveryCategory.findById(s.category).session(session);
+      let strat = globalStrategy;
+      if (s.pricingStrategy) {
+        strat = (await PricingStrategy.findById(s.pricingStrategy).session(session)) || globalStrategy;
+      } else if (cat?.pricingStrategy) {
+        strat = (await PricingStrategy.findById(cat.pricingStrategy).session(session)) || globalStrategy;
+      }
       const distKm =
         geolib.getDistance(
           { latitude: s.location.lat, longitude: s.location.lng },
@@ -79,12 +86,22 @@ export const createOrder = async (req: Request, res: Response) => {
             longitude: chosenAddress.location.lng,
           }
         ) / 1000;
-      deliveryFee = calculateDeliveryPrice(distKm, strategy);
+      let fee = calculateDeliveryPrice(distKm, strat);
+      if (!s.takeCommission && s.deliveryDiscountRate) {
+        fee = fee * (1 - s.deliveryDiscountRate);
+      }
+      deliveryFee = fee;
     } else {
-      // لكل متجر ضمن السلة
       for (const storeId of stores) {
         const s = await DeliveryStore.findById(storeId).session(session);
         if (!s) throw new Error(`المتجر ${storeId} غير موجود`);
+        const cat = await DeliveryCategory.findById(s.category).session(session);
+        let strat = globalStrategy;
+        if (s.pricingStrategy) {
+          strat = (await PricingStrategy.findById(s.pricingStrategy).session(session)) || globalStrategy;
+        } else if (cat?.pricingStrategy) {
+          strat = (await PricingStrategy.findById(cat.pricingStrategy).session(session)) || globalStrategy;
+        }
         const distKm =
           geolib.getDistance(
             { latitude: s.location.lat, longitude: s.location.lng },
@@ -93,7 +110,11 @@ export const createOrder = async (req: Request, res: Response) => {
               longitude: chosenAddress.location.lng,
             }
           ) / 1000;
-        deliveryFee += calculateDeliveryPrice(distKm, strategy);
+        let fee = calculateDeliveryPrice(distKm, strat);
+        if (!s.takeCommission && s.deliveryDiscountRate) {
+          fee = fee * (1 - s.deliveryDiscountRate);
+        }
+        deliveryFee += fee;
       }
     }
 
@@ -247,6 +268,20 @@ if (walletUsed > 0) {
   } finally {
     session.endSession();
   }
+};
+
+// يسمح للأدمن بإنشاء طلب نيابة عن مستخدم معيّن
+export const adminCreateOrder = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  const user = await User.findById(userId);
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+  const originalUser = req.user;
+  req.user = { ...(req.user || {}), id: user.firebaseUID, uid: user.firebaseUID } as any;
+  await createOrder(req, res);
+  req.user = originalUser;
 };
 // PUT /orders/:id/vendor-accept
 export const vendorAcceptOrder = async (req: Request, res: Response) => {

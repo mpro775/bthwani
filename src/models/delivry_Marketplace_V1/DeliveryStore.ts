@@ -20,6 +20,8 @@ export interface IDeliveryStore extends Document {
   schedule: IWorkSchedule[];
   commissionRate:number;
   takeCommission:boolean;
+  pricingStrategy?: mongoose.Types.ObjectId;
+  deliveryDiscountRate?: number;
 }
 
 const storeSchema = new Schema<IDeliveryStore>({
@@ -51,6 +53,8 @@ const storeSchema = new Schema<IDeliveryStore>({
       to:   String,
     }
   ],
+  pricingStrategy: { type: Schema.Types.ObjectId, ref: "PricingStrategy" },
+  deliveryDiscountRate: { type: Number, default: 0 },
  
 }, { timestamps: true });
 
