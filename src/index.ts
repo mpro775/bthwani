@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
 import { Server as IOServer } from "socket.io";
-
+import adminNotificationRoutes from "./routes/admin/notification.routes";
 // استيراد Middleware
 import { verifyTokenSocket } from "./middleware/verifyTokenSocket";
 
@@ -110,7 +110,7 @@ app.use(`${API_PREFIX}/employees`, employeeRoutes);
 app.use(`${API_PREFIX}/attendance`, attendanceRoutes);
 app.use(`${API_PREFIX}/leaves`, leaveRequestRoutes);
 app.use(`${API_PREFIX}/goals`, performanceGoalRoutes);
-
+app.use(`${API_PREFIX}/admin/notifications`, adminNotificationRoutes);
 // قسم شحن المحفظة
 app.use(`${API_PREFIX}/topup`, topupRoutes);
 
