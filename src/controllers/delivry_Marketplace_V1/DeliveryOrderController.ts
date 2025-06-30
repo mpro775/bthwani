@@ -399,6 +399,11 @@ export const cancelOrder = async (req: Request, res: Response) => {
     }
 
     order.status = "cancelled";
+    order.statusHistory.push({
+      status: "cancelled",
+      changedAt: new Date(),
+      changedBy: "customer",
+    });
     await order.save();
 
     // (اختياري) إذا دفع بالـ wallet، أرجع المبلغ:
@@ -591,11 +596,16 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       return;
     }
 
-    const order = await DeliveryOrder.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    const order = await DeliveryOrder.findById(id);
+    if (order) {
+      order.status = status as any;
+      order.statusHistory.push({
+        status,
+        changedAt: new Date(),
+        changedBy: (req.user as any)?.role || "admin",
+      });
+      await order.save();
+    }
 
     if (!order) {
       res.status(404).json({ message: "الطلب غير موجود" });

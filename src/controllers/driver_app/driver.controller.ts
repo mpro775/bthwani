@@ -167,6 +167,11 @@ export const completeOrder = async (req: Request, res: Response) => {
   }
 
   order.status = "delivered";
+  order.statusHistory.push({
+    status: "delivered",
+    changedAt: new Date(),
+    changedBy: "driver",
+  });
   order.deliveredAt = new Date();
   await order.save();
 
