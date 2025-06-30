@@ -39,6 +39,14 @@ export const create = async (req: Request, res: Response) => {
        return;
     }
 
+    if (typeof body.variants === "string") {
+      try {
+        body.variants = JSON.parse(body.variants);
+      } catch {
+        body.variants = [];
+      }
+    }
+
     const product = new DeliveryProduct(body);
     await product.save();
 
@@ -77,9 +85,18 @@ export const getById = async (req: Request, res: Response) => {
 // Update
 export const update = async (req: Request, res: Response) => {
   try {
+    const updateBody: any = { ...req.body };
+    if (typeof updateBody.variants === "string") {
+      try {
+        updateBody.variants = JSON.parse(updateBody.variants);
+      } catch {
+        updateBody.variants = [];
+      }
+    }
+
     const updated = await DeliveryProduct.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateBody,
       { new: true }
     );
 

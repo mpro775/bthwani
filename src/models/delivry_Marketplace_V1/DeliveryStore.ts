@@ -20,6 +20,8 @@ export interface IDeliveryStore extends Document {
   schedule: IWorkSchedule[];
   commissionRate:number;
   takeCommission:boolean;
+  phones: string[];
+  defaultPhone?: string;
 }
 
 const storeSchema = new Schema<IDeliveryStore>({
@@ -43,6 +45,8 @@ const storeSchema = new Schema<IDeliveryStore>({
   logo:        { type: String },
   forceClosed: { type: Boolean, default: false },
   forceOpen:   { type: Boolean, default: false },
+  phones:      { type: [String], default: [] },
+  defaultPhone:{ type: String },
   schedule: [
     {
       day:  { type: String, required: true },

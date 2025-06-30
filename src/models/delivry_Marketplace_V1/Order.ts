@@ -45,6 +45,8 @@ export interface IDeliveryOrder extends Document {
     name: string;
     quantity: number;
     unitPrice: number;
+    isCustom?: boolean;
+    customPrice?: number;
   }[];
   subOrders: ISubOrder[];
   price: number;
@@ -113,6 +115,8 @@ const orderSchema = new Schema<IDeliveryOrder>(
         name: { type: String, required: true },
         quantity: { type: Number, required: true },
         unitPrice: { type: Number, required: true },
+        isCustom: { type: Boolean, default: false },
+        customPrice: { type: Number },
       },
     ],
     subOrders: [
@@ -131,6 +135,8 @@ const orderSchema = new Schema<IDeliveryOrder>(
             },
             quantity: Number,
             unitPrice: Number,
+            isCustom: { type: Boolean, default: false },
+            customPrice: { type: Number },
           },
         ],
         driver: { type: Schema.Types.ObjectId, ref: "Driver" },
