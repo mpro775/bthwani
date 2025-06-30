@@ -9,7 +9,7 @@ import { body, validationResult } from "express-validator";
 import Order from "../../models/delivry_Marketplace_V1/Order";
 import { requireRole } from "../../middleware/auth";
 import { authVendor } from "../../middleware/authVendor";
-import { driverDeliver, driverPickUp } from "../../controllers/delivry_Marketplace_V1/orderDriver";
+import { driverDeliver, driverPickUp, driverAcceptOrder } from "../../controllers/delivry_Marketplace_V1/orderDriver";
 import { getDeliveryFee } from "../../controllers/delivry_Marketplace_V1/DeliveryCartController";
 import { rateOrder } from "../../controllers/delivry_Marketplace_V1/orderRating";
 
@@ -132,6 +132,7 @@ router.put(
   controller.vendorAcceptOrder
 );
 router.post("/:id/rate", verifyFirebase, rateOrder);
+router.post("/:id/driver-accept", requireRole(["driver"]), driverAcceptOrder);
 
 router.patch("/:id/driver-pickup", driverPickUp);
 router.patch("/:id/admin-status",verifyFirebase,verifyAdmin, controller.adminChangeStatus);

@@ -1,6 +1,7 @@
 // src/controllers/orderRating.ts
 import { Request, Response } from "express";
 import DeliveryOrder from "../../models/delivry_Marketplace_V1/Order";
+import { User } from "../../models/user";
 
 export const rateOrder = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -33,6 +34,9 @@ res.status(404).json({ message: "الطلب غير موجود" });
   };
 
   await order.save();
+  if (company <= 2 || orderRating <= 2 || driver <= 2) {
+    await User.findByIdAndUpdate(order.user, { $inc: { negativeRatingCount: 1 } });
+  }
    res.json({ message: "تم حفظ التقييم بنجاح", rating: order.rating });
    return;
 };

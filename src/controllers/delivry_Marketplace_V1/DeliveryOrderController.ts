@@ -269,8 +269,17 @@ export const vendorAcceptOrder = async (req: Request, res: Response) => {
     return;
   }
 
+  // Check user rating - disable auto assignment if rating is bad
+  const user = await User.findById(order.user);
+  if (user && user.negativeRatingCount >= 3) {
+    res
+      .status(400)
+      .json({ message: "Automatic assignment disabled for this user" });
+    return;
+  }
+
   // اختيار أقرب سائق
-  const driver = await Driver.findOne({
+  const drivers = await Driver.find({
     isAvailable: true,
     isBanned: false,
     $or: [
@@ -290,24 +299,23 @@ export const vendorAcceptOrder = async (req: Request, res: Response) => {
         $maxDistance: 5000,
       },
     },
-  });
-  if (!driver) {
+  })
+    .limit(5);
+  if (!drivers.length) {
     res.status(400).json({ message: "No available driver nearby" });
     return;
   }
 
-  // عيّن السائق وحوّل الحالة إلى "preparing"
-  // تسجيل التاريخ وتحويل الحالة
-  order.status = "preparing";
+  order.candidateDrivers = drivers.map((d) => d._id);
+  order.status = "awaiting_driver";
   order.statusHistory.push({
-    status:    "preparing",
+    status:    order.status,
     changedAt: new Date(),
     changedBy: "store",
   });
 
-  // إذا تُريد تسجيل وقت التعيين:
-  order.assignedAt = new Date();
-    await order.save();
+  // سيتم تعيين السائق عند قبوله للطلب
+  await order.save();
 
   res.json(order);
   return;
