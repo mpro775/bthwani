@@ -29,6 +29,7 @@ import topupRoutes from "./routes/Wallet_V8/topupRoutes";
 import driverWithdrawalRoutes from "./routes/driver_app/driver.withdrawal.routes";
 import vendorRoutes from "./routes/vendor_app/vendor.routes";
 import storeStatsRoutes from "./routes/admin/storeStatsRoutes";
+import reportRoutes from "./routes/admin/reportRoutes";
 
 import deliveryCategoryRoutes from "./routes/delivry_marketplace_v1/DeliveryCategoryRoutes";
 import deliveryStoreRoutes from "./routes/delivry_marketplace_v1/DeliveryStoreRoutes";
@@ -116,6 +117,7 @@ app.use(`${API_PREFIX}/topup`, topupRoutes);
 
 // قسم الأدمن وإدارة المنتجات
 app.use(`${API_PREFIX}/admin`, adminRoutes);
+app.use(`${API_PREFIX}/admin`, reportRoutes);
 app.use(`${API_PREFIX}/admin/drivers`, adminDriverRoutes);
 app.use(`${API_PREFIX}/driver`, driverRoutes);
 app.use(`${API_PREFIX}/admin/withdrawals`, adminWithdrawalRoutes);
