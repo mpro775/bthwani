@@ -12,18 +12,6 @@ export const registerOrUpdateUser = async (req: Request, res: Response) => {
 
   const name = body.fullName || "مستخدم";
 
-  // 🧹 تنظيف donationLocation من جسم الطلب إذا لم يكن GeoJSON صالح
-  const isValidGeoPoint =
-    body.donationLocation &&
-    body.donationLocation.type === "Point" &&
-    Array.isArray(body.donationLocation.coordinates) &&
-    body.donationLocation.coordinates.length === 2 &&
-    typeof body.donationLocation.coordinates[0] === "number" &&
-    typeof body.donationLocation.coordinates[1] === "number";
-
-  if (!isValidGeoPoint) {
-    delete body.donationLocation;
-  }
 
   try {
     let user = await User.findOne({ firebaseUID: uid });
@@ -43,18 +31,6 @@ if (user && !user.emailVerified) {
       // تحديث مستخدم حالي
       Object.assign(user, body);
 
-      // 🔒 تنظيف donationLocation القديم إذا كان غير صالح
-      const loc = user.donationLocation;
-      if (
-        loc &&
-        (loc.type !== "Point" ||
-          !Array.isArray(loc.coordinates) ||
-          loc.coordinates.length !== 2 ||
-          typeof loc.coordinates[0] !== "number" ||
-          typeof loc.coordinates[1] !== "number")
-      ) {
-        user.donationLocation = undefined;
-      }
     }
     console.log("🔍 user.toObject():", user.toObject());
 
@@ -247,10 +223,7 @@ export const getUserStats = async (req: Request, res: Response) => {
   }
 
   const stats = {
-    postsCount: user.postsCount || 0,
-    followersCount: user.followersCount || 0,
     favoritesCount: user.favorites?.length || 0,
-    messagesCount: user.messagesCount || 0,
   };
 
   res.json(stats);
