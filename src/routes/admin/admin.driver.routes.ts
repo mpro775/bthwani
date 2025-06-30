@@ -9,6 +9,7 @@ import {
   toggleBan,
   updateWallet,
   verifyDriver,
+  assignDriver,
 } from "../../controllers/admin/admin.driver.controller";
 import { authenticate, authorize } from "../../middleware/auth.middleware";
 import {
@@ -281,9 +282,15 @@ verifyAdmin,
  */
 router.patch(
   "/:id/wallet",
- verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+  verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
 verifyAdmin,
   updateWallet
+);
+router.patch(
+  "/assign-order",
+  verifyFirebase,
+  verifyAdmin,
+  assignDriver
 );
 
 /**

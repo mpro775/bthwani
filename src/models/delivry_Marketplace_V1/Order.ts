@@ -11,6 +11,7 @@ interface IRating {
 export type OrderStatus =
   | "pending_confirmation"   // في انتظار تأكيد الطلب من الإدارة
   | "under_review"           // قيد المراجعة → تُعطى للدليفري
+  | "awaiting_driver"        // في انتظار موافقة المندوب
   | "preparing"              // قيد التحضير (داخل المطعم/المتجر)
   | "out_for_delivery"       // في الطريق إليك (من الدليفري)
   | "delivered"              // تم التوصيل
@@ -71,6 +72,7 @@ export interface IDeliveryOrder extends Document {
   returnBy?: "admin" | "customer" | "driver" | "store";
   scheduledFor?: Date;
   assignedAt?: Date;
+  candidateDrivers?: Types.ObjectId[];
     deliveryReceiptNumber?: string;    // رقم السند
 
   deliveredAt?: Date;
@@ -215,6 +217,7 @@ cashDue:    { type: Number, default: 0 },      // المبلغ المتبقي ي
       enum: ["admin", "customer", "driver", "store"],
     },
     scheduledFor: Date,
+    candidateDrivers: [{ type: Schema.Types.ObjectId, ref: "Driver" }],
     notes: String,
   },
   { timestamps: true }
