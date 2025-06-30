@@ -1,27 +1,28 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IDeliveryProduct extends Document {
-  storeId: mongoose.Types.ObjectId;
-  subCategoryId?: mongoose.Types.ObjectId;
+  store: mongoose.Types.ObjectId;
+  subCategory?: mongoose.Types.ObjectId;
   name: string;
   description?: string;
   price: number;
   image?: string;
   isAvailable: boolean;
-  isDailyOffer?: boolean;
-  
+  isDailyOffer: boolean;
 }
 
 const productSchema = new Schema<IDeliveryProduct>({
-  storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'DeliveryStore', required: true },
-  subCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'DeliveryProductSubCategory' },
-  name: { type: String, required: true },
-  description: String,
-  price: { type: Number, required: true },
-    isDailyOffer: { type: Boolean, default: false },
-
-  image: String,
-  isAvailable: { type: Boolean, default: true }
+  store:        { type: Schema.Types.ObjectId, ref: "DeliveryStore", required: true },
+  subCategory:  { type: Schema.Types.ObjectId, ref: "DeliveryProductSubCategory" },
+  name:         { type: String, required: true },
+  description:  { type: String },
+  price:        { type: Number, required: true },
+  image:        { type: String },
+  isAvailable:  { type: Boolean, default: true },
+  isDailyOffer: { type: Boolean, default: false },
 }, { timestamps: true });
 
-export default mongoose.model<IDeliveryProduct>('DeliveryProduct', productSchema);
+export default mongoose.model<IDeliveryProduct>(
+  "DeliveryProduct",
+  productSchema
+);

@@ -1,62 +1,145 @@
-import mongoose from "mongoose";
+// src/models/Driver_app/driver.ts
 
-const DriverSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  phone: { type: String, required: true, unique: true },
-  email: String,
-  password: { type: String, required: true },
+import mongoose, { Document, Schema, Types } from "mongoose";
 
-  // 🔐 الدور حسب الـ Vertical
-  role: {
-    type: String,
-    enum: ["rider_driver", "light_driver", "women_driver"], // فقط هذه الثلاثة
-    required: true,
-  },
+export interface IOtherLocation {
+  label:     string;
+  lat:       number;
+  lng:       number;
+  updatedAt: Date;
+}
 
-  vehicleType: { type: String, enum: ["bike", "car"], required: true },
+export type DriverType = "primary" | "joker";
 
-  isAvailable: { type: Boolean, default: true },
-  isFemaleDriver: { type: Boolean, default: false },
-  isVerified: { type: Boolean, default: false },
-  isBanned: { type: Boolean, default: false },
+export interface IDriver extends Document {
+  fullName: string;
 
-  // 📍 المواقع
+  email:    string;
+  password: string;
+  phone:    string;
+
+  role: "rider_driver" | "light_driver" | "women_driver";
+
+  // متر | دراجة | سيارة
+  vehicleType: "motor" | "bike" | "car";
+
+  // نوع المندوب من البداية
+  driverType: DriverType;
+
+  isAvailable:    boolean;
+  isFemaleDriver: boolean;
+  isVerified:     boolean;
+  isBanned:       boolean;
+
   currentLocation: {
-    lat: Number,
-    lng: Number,
-    updatedAt: { type: Date, default: Date.now },
-  },
-  residenceLocation: {
-    lat: Number,
-    lng: Number,
-    address: String,
-    governorate: String,
-    city: String,
-  },
-  otherLocations: [
-    {
-      label: String,
-      lat: Number,
-      lng: Number,
-      updatedAt: { type: Date, default: Date.now },
-    },
-  ],
+    lat:       number;
+    lng:       number;
+    updatedAt: Date;
+  };
 
-  // 💰 المحفظة
+  residenceLocation: {
+    lat:        number;
+    lng:        number;
+    address:    string;
+    governorate:string;
+    city:       string;
+  };
+
+  otherLocations: IOtherLocation[];
+
   wallet: {
-    balance: { type: Number, default: 0 },
-    earnings: { type: Number, default: 0 },
-    lastUpdated: { type: Date, default: Date.now },
-  },
+    balance:     number;
+    earnings:    number;
+    lastUpdated: Date;
+  };
 
   deliveryStats: {
-    deliveredCount: { type: Number, default: 0 },
-    canceledCount: { type: Number, default: 0 },
-    totalDistanceKm: { type: Number, default: 0 },
+    deliveredCount:  number;
+    canceledCount:   number;
+    totalDistanceKm: number;
+  };
+
+  // حقول متعلقة فقط إذا كان من نوع "joker"
+  jokerFrom?: Date;
+  jokerTo?:   Date;
+}
+
+const OtherLocationSchema = new Schema<IOtherLocation>(
+  {
+    label:     { type: String, required: true },
+    lat:       { type: Number, required: true },
+    lng:       { type: Number, required: true },
+    updatedAt: { type: Date,   default: Date.now }
   },
+  { _id: false }
+);
 
-  firebaseUID: String,
-  createdAt: { type: Date, default: Date.now },
-});
+const DriverSchema = new Schema<IDriver>(
+  {
+    fullName: { type: String, required: true },
 
-export const Driver = mongoose.model("Driver", DriverSchema);
+    email:    { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    phone:    { type: String, required: true, unique: true },
+
+    role: {
+      type: String,
+      enum: ["rider_driver", "light_driver", "women_driver"],
+      required: true
+    },
+
+    vehicleType: {
+      type: String,
+      enum: ["motor", "bike", "car"],
+      required: true
+    },
+
+    // هنا نختار "primary" أو "joker" عند الإنشاء
+    driverType: {
+      type: String,
+      enum: ["primary", "joker"],
+      required: true,
+      default: "primary"
+    },
+
+    isAvailable:    { type: Boolean, default: true },
+    isFemaleDriver: { type: Boolean, default: false },
+    isVerified:     { type: Boolean, default: false },
+    isBanned:       { type: Boolean, default: false },
+
+    currentLocation: {
+      lat:       { type: Number, default: 0 },
+      lng:       { type: Number, default: 0 },
+      updatedAt: { type: Date,   default: Date.now }
+    },
+
+    residenceLocation: {
+      lat:         { type: Number, required: true },
+      lng:         { type: Number, required: true },
+      address:     { type: String, required: true },
+      governorate: { type: String, required: true },
+      city:        { type: String, required: true }
+    },
+
+    otherLocations: { type: [OtherLocationSchema], default: [] },
+
+    wallet: {
+      balance:     { type: Number, default: 0 },
+      earnings:    { type: Number, default: 0 },
+      lastUpdated: { type: Date,   default: Date.now }
+    },
+
+    deliveryStats: {
+      deliveredCount:  { type: Number, default: 0 },
+      canceledCount:   { type: Number, default: 0 },
+      totalDistanceKm: { type: Number, default: 0 }
+    },
+
+    // إذا كان من نوع joker نستعمل هذه الحقول للفترة
+    jokerFrom: { type: Date },
+    jokerTo:   { type: Date }
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<IDriver>("Driver", DriverSchema);

@@ -1,123 +1,231 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Document, Schema, Types } from "mongoose";
 
-interface SubOrder {
-  _id: string;
-  storeId: string;
-  items: { productId: string; quantity: number; price: number }[];
-  deliveryDriverId?: string;
-  deliveryStatus?: "pending" | "delivered" | "on_the_way";
+interface IRating {
+  company:      number;  // 1–5
+  order:        number;  // 1–5
+  driver:       number;  // 1–5
+  comments?:    string;
+  ratedAt:      Date;
 }
 
-export interface IOrder extends Document {
-  userId: Types.ObjectId;
-  driverId?: Types.ObjectId;
-  storeId?: Types.ObjectId;
-  status: "pending" | "assigned" | "delivering" | "delivered" | "cancelled";
+export type OrderStatus =
+  | "pending_confirmation"   // في انتظار تأكيد الطلب من الإدارة
+  | "under_review"           // قيد المراجعة → تُعطى للدليفري
+  | "preparing"              // قيد التحضير (داخل المطعم/المتجر)
+  | "out_for_delivery"       // في الطريق إليك (من الدليفري)
+  | "delivered"              // تم التوصيل
+  | "returned"               // الارجاع (من الأدمن)
+  | "cancelled";             // الالغاء (من الأدمن)
+interface IStatusHistoryEntry {
+  status: string;
+  changedAt: Date;
+  changedBy: "admin" | "store" | "driver" | "customer";
+}
+
+  interface ISubOrder {
+  store: Types.ObjectId;
   items: {
-    productId: Types.ObjectId;
-    name:      string;
-    quantity:  number;
+    product: Types.ObjectId;
+    quantity: number;
     unitPrice: number;
   }[];
-  subOrders: SubOrder[];
+  driver?: Types.ObjectId;
+    deliveryReceiptNumber?: string;    // رقم السند
 
-    price: number;
-address: {
-    label:   string;
-    street:  string;
-    city:    string;
-    location:{
-      lat: number;
-      lng: number;
-    }
-  };
-deliveryMode?: "unified" | "split";
-    city: string;
-  notes?: string;
-  assignedAt?: Date;
-  paymentMethod?:string;
-  paid:boolean;
-  deliveredAt?: Date;
-    scheduledFor?: Date;
+  status: OrderStatus;
+    statusHistory: IStatusHistoryEntry[];
 
-  createdAt: Date;
 }
 
-const orderSchema = new Schema<IOrder>({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  driverId: { type: Schema.Types.ObjectId, ref: 'Driver' }, // role === 'driver'
-  storeId: { type: Schema.Types.ObjectId, ref: 'DeliveryStore' },
-  status: {
-    type: String,
-    enum: ["pending", "assigned", "delivering", "delivered", "cancelled"],
-    default: "pending"
-  },
-    paymentMethod: {
-    type: String,
-    enum: ['wallet', 'cod'],    // Cod = Cash On Delivery
-    required: true
-  },
-  paid: {
-    type: Boolean,
-    default: false
-  },
+export interface IDeliveryOrder extends Document {
+  user: Types.ObjectId;
+  driver?: Types.ObjectId;
+  items: {
+    product: Types.ObjectId;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }[];
+  subOrders: ISubOrder[];
+  price: number;
+  deliveryFee:number;
+  companyShare:number;
+  platformShare:number;
+    rating?: IRating;    // إضافة حقل اختياري للتقييم
 
-scheduledFor: {
-  type: Date,
-  required: false,
-},
-deliveryMode: {
-  type: String,
-  enum: ["unified", "split"],
-  default: "split",
-},
-subOrders: [
+  walletUsed:number;
+  cashDue:number;
+  statusHistory: IStatusHistoryEntry[];
+
+  address: {
+    label: string;
+    street: string;
+    city: string;
+    location: { lat: number; lng: number };
+  };
+  deliveryMode: "unified" | "split";
+  paymentMethod: "wallet" | "cod";
+  paid: boolean;
+  status: OrderStatus;
+    returnReason?: string;      // سبب الارجاع/الإلغاء
+  returnBy?: "admin" | "customer" | "driver" | "store";
+  scheduledFor?: Date;
+  assignedAt?: Date;
+    deliveryReceiptNumber?: string;    // رقم السند
+
+  deliveredAt?: Date;
+  notes?: string;
+}
+
+const statusHistorySchema = new Schema<IStatusHistoryEntry>(
   {
-    storeId: { type: Schema.Types.ObjectId, ref: "Store", required: true },
+    status:    { type: String, required: true },
+    changedAt: { type: Date,   required: true, default: Date.now },
+    changedBy: {
+      type: String,
+      enum: ["admin", "store", "driver", "customer"],
+      required: true
+    },
+  },
+  { _id: false }
+);
+const ratingSchema = new Schema<IRating>(
+  {
+    company:   { type: Number, min: 1, max: 5, required: true },
+    order:     { type: Number, min: 1, max: 5, required: true },
+    driver:    { type: Number, min: 1, max: 5, required: true },
+    comments:  { type: String },
+    ratedAt:   { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+const orderSchema = new Schema<IDeliveryOrder>(
+  {
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    driver: { type: Schema.Types.ObjectId, ref: "Driver" },
     items: [
       {
-        productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
-        quantity: Number,
-        price: Number,
+        product: {
+          type: Schema.Types.ObjectId,
+          ref: "DeliveryProduct",
+          required: true,
+        },
+        name: { type: String, required: true },
+        quantity: { type: Number, required: true },
+        unitPrice: { type: Number, required: true },
       },
     ],
-    deliveryStatus: { type: String, enum: ["pending", "on_the_way", "delivered"], default: "pending" },
-    deliveryDriverId: { type: Schema.Types.ObjectId, ref: "User" },
+    subOrders: [
+      {
+        store: {
+          type: Schema.Types.ObjectId,
+          ref: "DeliveryStore",
+          required: true,
+        },
+        items: [
+          {
+            product: {
+              type: Schema.Types.ObjectId,
+              ref: "DeliveryProduct",
+              required: true,
+            },
+            quantity: Number,
+            unitPrice: Number,
+          },
+        ],
+        driver: { type: Schema.Types.ObjectId, ref: "Driver" },
+       status: {
+      type: String,
+      enum: [
+        "pending_confirmation",
+        "under_review",
+        "preparing",
+        "out_for_delivery",
+        "delivered",
+        "returned",
+        "cancelled",
+      ],
+      default: "pending_confirmation",
+    },
+statusHistory: {
+      type: [statusHistorySchema],
+      default: [{ status: "pending_confirmation", changedAt: new Date(), changedBy: "customer" }],
+    },
+    deliveryReceiptNumber: {
+  type: String,
+  required: function () { return this.status === "delivered"; }
+},
+    returnReason: { type: String },
+    returnBy: {
+      type: String,
+      enum: ["admin", "customer", "driver", "store"],
+    },
+    },
+    ],
+    rating: {
+      type: ratingSchema,
+      default: null,
+    },
+    deliveryReceiptNumber: {
+  type: String,
+  required: function () { return this.status === "delivered"; }
+},
+    price: { type: Number, required: true },
+    companyShare: { type: Number, required: true }, // جديد
+platformShare:{ type: Number, required: true }, // جديد
+deliveryFee: { type: Number, required: true },
+walletUsed: { type: Number, default: 0 },      // ما خصمه من المحفظة
+cashDue:    { type: Number, default: 0 },      // المبلغ المتبقي يدفع كاش
+    address: {
+      label: { type: String, required: true },
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      location: {
+        lat: { type: Number, required: true },
+        lng: { type: Number, required: true },
+      },
+    },
+    deliveryMode: {
+      type: String,
+      enum: ["unified", "split"],
+      default: "split",
+    },
+    paymentMethod: { type: String, enum: ["wallet", "cod"], required: true },
+    paid: { type: Boolean, default: false },
+   status: {
+      type: String,
+      enum: [
+        "pending_confirmation",
+        "under_review",
+        "preparing",
+        "out_for_delivery",
+        "delivered",
+        "returned",
+        "cancelled",
+      ],
+      default: "pending_confirmation",
+    },
+    statusHistory: {
+      type: [statusHistorySchema],
+      default: [{ status: "pending_confirmation", changedAt: new Date(), changedBy: "customer" }],
+    },
+    returnReason: { type: String },
+    returnBy: {
+      type: String,
+      enum: ["admin", "customer", "driver", "store"],
+    },
+    scheduledFor: Date,
+    notes: String,
   },
-],
+  { timestamps: true }
+);
 
-
-items: [{
-  productId: { type: Schema.Types.ObjectId, ref: 'DeliveryProduct', required: true },
-  name:      { type: String, required: true },
-  quantity:  { type: Number, required: true },
-  unitPrice: { type: Number, required: true }
-}],
-  price: { type: Number, required: true },
-  address: {
-    label:   { type: String, required: true },
-    street:  { type: String, required: true },
-    city:    { type: String, required: true },
-    location:{
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true }
-    }
-  },  city: String,
-  notes: String,
-  assignedAt: Date,
-  deliveredAt: Date
-}, { timestamps: true });
-
-orderSchema.pre('findOneAndUpdate', function(next) {
-  const update: any = this.getUpdate();
-  if (update.status === 'assigned') {
-    update.assignedAt = new Date();
-  }
-  if (update.status === 'delivered') {
-    update.deliveredAt = new Date();
-  }
-  this.setUpdate(update);
+orderSchema.pre("findOneAndUpdate", function (next) {
+  const u: any = this.getUpdate();
+  if (u.status === "assigned") u.assignedAt = new Date();
+  if (u.status === "delivered") u.deliveredAt = new Date();
+  this.setUpdate(u);
   next();
 });
 
-export default model<IOrder>('DeliveryOrder', orderSchema);
+export default mongoose.model<IDeliveryOrder>("DeliveryOrder", orderSchema);

@@ -1,8 +1,13 @@
 // src/utils/storeStatus.ts
 import dayjs from "dayjs";
-
+export interface IWorkSchedule {
+  day:   string;
+  open:  boolean;
+  from?: string;
+  to?:   string;
+}
 export function computeIsOpen(
-  schedule: { day: string; open: boolean; from: string; to: string }[],
+  schedule:IWorkSchedule[],
   forceClosed: boolean,
   forceOpen: boolean
 ): boolean {

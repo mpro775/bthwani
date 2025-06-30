@@ -1,15 +1,20 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IDeliveryCategory extends Document {
   name: string;
-image: { type: String }; // رابط الصورة أو اسم الملف
+  image?: string;
   description?: string;
+  parent?: mongoose.Types.ObjectId;           // فئة أصلية (للتصنيفات المتداخلة)
 }
 
 const deliveryCategorySchema = new Schema<IDeliveryCategory>({
-  name: { type: String, required: true },
-  image: { type: String },
-  description: { type: String }
+  name:        { type: String, required: true },
+  image:       { type: String },
+  description: { type: String },
+  parent:      { type: Schema.Types.ObjectId, ref: "DeliveryCategory" },
 }, { timestamps: true });
 
-export default mongoose.model<IDeliveryCategory>('DeliveryCategory', deliveryCategorySchema);
+export default mongoose.model<IDeliveryCategory>(
+  "DeliveryCategory",
+  deliveryCategorySchema
+);

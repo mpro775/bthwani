@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Driver } from "../../models/Driver_app/driver";
-import { DeliveryOrder } from "../../models/Driver_app/deliveryOrder.model";
-import { DriverReview } from "../../models/Driver_app/driverReview.model";
+import Driver from "../../models/Driver_app/driver";
+
 import { User } from "../../models/user";
 import { OTP } from "../../models/otp";
 import { generateOTP } from "../../utils/otp";
 import { sendWhatsAppMessage } from "../../utils/whatsapp";
+import Order from "../../models/delivry_Marketplace_V1/Order";
+import driverReviewModel from "../../models/Driver_app/driverReview.model";
+import mongoose from "mongoose";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
 
@@ -146,7 +148,7 @@ export const deleteOtherLocation = async (req: Request, res: Response) => {
 };
 
 export const getMyOrders = async (req: Request, res: Response) => {
-  const orders = await DeliveryOrder.find({ driverId: req.user.id }).sort({
+  const orders = await Order.find({ driverId: req.user.id }).sort({
     createdAt: -1,
   });
   res.json(orders);
@@ -155,7 +157,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
 export const completeOrder = async (req: Request, res: Response) => {
   const { orderId } = req.params;
 
-  const order = await DeliveryOrder.findOne({
+  const order = await Order.findOne({
     _id: orderId,
     driverId: req.user.id,
   });
@@ -176,7 +178,7 @@ export const completeOrder = async (req: Request, res: Response) => {
 export const addReviewForUser = async (req: Request, res: Response) => {
   const { orderId, userId, rating, comment } = req.body;
 
-  const existing = await DriverReview.findOne({
+  const existing = await driverReviewModel.findOne({
     orderId,
     driverId: req.user.id,
   });
@@ -185,7 +187,7 @@ export const addReviewForUser = async (req: Request, res: Response) => {
     return;
   }
 
-  const review = await DriverReview.create({
+  const review = await driverReviewModel.create({
     orderId,
     driverId: req.user.id,
     userId,
@@ -244,7 +246,73 @@ export const initiateTransferToUser = async (req: Request, res: Response) => {
   }
   res.json({ message: "Verification code sent to your phone" });
 };
+export const updateJokerWindow = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { jokerFrom, jokerTo } = req.body;
 
+  // تأكد من أن معرّف سليم
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+     res.status(400).json({ message: "Invalid driver ID" });
+     return;
+  }
+
+  // يجب أن يُرسل الأدمن التوقيتين
+  if (!jokerFrom || !jokerTo) {
+     res
+      .status(400)
+      .json({ message: "jokerFrom and jokerTo are both required" });
+      return;
+  }
+
+  const fromDate = new Date(jokerFrom);
+  const toDate   = new Date(jokerTo);
+  if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+     res.status(400).json({ message: "Invalid date format" });
+     return;
+  }
+
+  // حدِّد التحديث؛ لا نغيّر driverType هنا، فقط نحدّث الأوقات
+  const updates: Partial<{ jokerFrom: Date; jokerTo: Date }> = {
+    jokerFrom: fromDate,
+    jokerTo:   toDate,
+  };
+
+  const driver = await Driver.findByIdAndUpdate(id, updates, { new: true });
+  if (!driver) {
+     res.status(404).json({ message: "Driver not found" });
+     return;
+  }
+
+   res.json({
+    message: "Joker window updated successfully",
+    jokerFrom: driver.jokerFrom,
+    jokerTo:   driver.jokerTo,
+  });
+  return;
+};
+export const changeDriverType = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { driverType, jokerFrom, jokerTo } = req.body;
+  const updates: any = { driverType };
+
+  if (driverType === "joker") {
+    // حقلَي الوقت إجباريّان لمن هم من نوع جوكر
+    if (!jokerFrom || !jokerTo) {
+       res.status(400).json({ message: "يجب تحديد jokerFrom و jokerTo للجوكر" });
+       return;
+    }
+    updates.jokerFrom = new Date(jokerFrom);
+    updates.jokerTo   = new Date(jokerTo);
+  } else {
+    // لو حولناه لأساسي، ننظف القيم القديمة
+    updates.jokerFrom = undefined;
+    updates.jokerTo   = undefined;
+  }
+
+  const driver = await Driver.findByIdAndUpdate(id, updates, { new: true });
+  if (!driver) return res.status(404).json({ message: "Driver not found" });
+  res.json(driver);
+};
 export const confirmTransferToUser = async (req: Request, res: Response) => {
   const { code } = req.body;
 

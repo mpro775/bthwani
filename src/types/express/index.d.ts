@@ -1,27 +1,28 @@
-// types/express/index.d.ts
-import * as express from "express";
-import { UserDocument } from "../../models/user";
+// src/types/express/index.d.ts
+
+import { AdminPayload } from '../../types';       // تأكد من المسار الصحيح لملف types.ts حيث صدّرت AdminPayload
+import { UserDocument } from '../../models/user'; // حسب مسار نموذج المستخدم في مشروعك
 
 declare global {
   namespace Express {
     interface Request {
-      // إضافة حقل user
-      user?: {
-        uid?: string;
-        id?: string;
-        // يمكنك إضافة حقول أخرى حسب الحاجة
-        email?: string;
-        role?: string;
-        date?: Date;
-      };
+      /**
+       * بيانات المستخدم الموثّق بها (JWT payload)
+       * من النوع AdminPayload
+       */
+      user?: AdminPayload;
+
+      /**
+       * إذا كنت تحتاج للاحتفاظ بوثيقة المستخدم الكاملة
+       */
       userData?: UserDocument;
 
-      // params عامة
+      /**
+       * params عامة
+       */
       params: Record<string, string>;
     }
   }
 }
 
-// تأكّد من أن هذا الملف لا يعرِّف دالة Number!
-// (أزل أي declare function Number(...))
 export {};

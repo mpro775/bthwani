@@ -1,15 +1,27 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import DeliveryStore, {
-  IDeliveryStore,
 } from "../../models/delivry_Marketplace_V1/DeliveryStore";
 import { computeIsOpen } from "../../utils/storeStatus";
+import Vendor from "../../models/vendor_app/Vendor";
 
 // Create a new delivery store
 export const create = async (req: Request, res: Response) => {
   try {
     const body: any = { ...req.body };
-
+     if (req.user.role === "vendor") {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (!vendor) {
+         res.status(403).json({ message: "ليس لديك حساب تاجر" });
+         return;
+      }
+      if (vendor.store.toString() !== req.body.store) {
+         res
+          .status(403)
+          .json({ message: "ليس لديك صلاحية إضافة منتج لهذا المتجر" });
+          return;
+      }
+    }
     // Convert category to ObjectId if valid
     if (body.category && mongoose.Types.ObjectId.isValid(body.category)) {
       body.category = new mongoose.Types.ObjectId(body.category);
@@ -126,6 +138,19 @@ export const update = async (req: Request, res: Response) => {
       delete body.lat;
       delete body.lng;
     }
+     if (req.user.role === "vendor") {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (!vendor) {
+         res.status(403).json({ message: "ليس لديك حساب تاجر" });
+         return;
+      }
+      if (vendor.store.toString() !== req.body.store) {
+         res
+          .status(403)
+          .json({ message: "ليس لديك صلاحية إضافة منتج لهذا المتجر" });
+          return;
+      }
+    }
 
     // Parse schedule JSON string into array
     if (typeof body.schedule === "string") {
@@ -160,8 +185,23 @@ export const update = async (req: Request, res: Response) => {
 // Delete a delivery store
 export const remove = async (req: Request, res: Response) => {
   try {
+     if (req.user.role === "vendor") {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (!vendor) {
+         res.status(403).json({ message: "ليس لديك حساب تاجر" });
+         return;
+      }
+      if (vendor.store.toString() !== req.body.store) {
+         res
+          .status(403)
+          .json({ message: "ليس لديك صلاحية إضافة منتج لهذا المتجر" });
+          return;
+      }
+    }
     await DeliveryStore.findByIdAndDelete(req.params.id);
+  
     res.json({ message: "DeliveryStore deleted" });
+
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

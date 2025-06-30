@@ -10,10 +10,10 @@ import {
 import { verifyFirebase } from "../../middleware/verifyFirebase";
 import { verifyAdmin } from "../../middleware/verifyAdmin";
 import { User } from "../../models/user";
-import { getUserStats } from "../../controllers/user/userController";
+import { getAdminStats } from "../../controllers/admin/adminUserController";
 import { verifyCapability } from "../../middleware/verifyCapability";
-import Order from "../../models/delivry_Marketplace_V1/Order";
-import { requireRole } from "../../middleware/auth";
+import { getDeliveryKPIs } from "../../controllers/admin/adminDeliveryController";
+import { listUsersStats } from "../../models/delivry_Marketplace_V1/adminUsers";
 
 const router = Router();
 
@@ -273,10 +273,17 @@ router.get("/check-role", verifyFirebase, (req: Request, res: Response) => {
 router.get(
   "/stats",
   verifyFirebase,
+  verifyAdmin,
   verifyCapability("admin", "canViewStats"),
-  getUserStats
+  getAdminStats
 );
 
+router.get(
+  "/delivery/kpis",
+  verifyFirebase,
+  verifyAdmin,
+  getDeliveryKPIs
+);
 /**
  * @swagger
  * /admin/delivery/{id}/status:
@@ -332,30 +339,35 @@ router.get(
  *       500:
  *         description: خطأ في الخادم أثناء تحديث الحالة.
  */
-router.patch(
-  "/delivery/:id/status",
-  requireRole(["driver"]),
-  async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { status } = req.body;
 
-    const order = await Order.findOne({ "subOrders._id": id });
-    if (!order) {
-      res.status(404).json({ message: "الطلب غير موجود" });
-      return;
-    }
+router.get("/delivery/stores/:storeId/stats", async (req, res) => {
+  const storeId = req.params.storeId;
 
-    const subOrder = order.subOrders.find((s) => s._id?.toString() === id);
-    if (!subOrder) {
-      res.status(404).json({ message: "الطلب الجزئي غير موجود" });
-      return;
-    }
+  // جلب الإحصائيات اليومية
+  const dailyStats = await getStoreStats(storeId, "daily");
 
-    subOrder.deliveryStatus = status;
-    await order.save();
+  // جلب الإحصائيات الأسبوعية
+  const weeklyStats = await getStoreStats(storeId, "weekly");
 
-    res.json({ message: "تم التحديث", status });
-  }
-);
+  // جلب الإحصائيات الشهرية
+  const monthlyStats = await getStoreStats(storeId, "monthly");
+
+  res.json({
+    dailyStats,
+    weeklyStats,
+    monthlyStats,
+  });
+});
+router.get("/users", verifyFirebase, verifyAdmin, listUsersStats);
+router.patch("/users/:id", verifyFirebase, verifyAdmin, updateUserAdmin);
+const getStoreStats = async (storeId: string, period: "daily" | "weekly" | "monthly") => {
+  // تنفيذ الاستعلام لحساب عدد المنتجات، عدد الطلبات، والإيرادات حسب الفترة المحددة
+  // هنا يمكنك استبدال الاستعلام الفعلي بناءً على الهيكل الخاص بك في قاعدة البيانات
+  return {
+    productsCount: 10, // قيمة افتراضية
+    ordersCount: 5,    // قيمة افتراضية
+    totalRevenue: 100, // قيمة افتراضية
+  };
+};
 
 export default router;

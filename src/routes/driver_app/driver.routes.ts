@@ -15,6 +15,11 @@ import {
   addReviewForUser,
 } from "../../controllers/driver_app/driver.controller";
 import { authenticate } from "../../middleware/auth.middleware";
+import {
+  getAssignedOrders,
+  listMyVacations,
+  requestVacation,
+} from "../../controllers/driver_app/vacation.controller";
 
 const router = express.Router();
 
@@ -75,7 +80,9 @@ const router = express.Router();
  *         description: خطأ في الخادم أثناء معالجة تسجيل الدخول.
  */
 router.post("/login", loginDriver);
-
+router.post("/vacations", authenticate, requestVacation);
+router.get("/vacations", authenticate, listMyVacations);
+router.get("/orders", authenticate, getAssignedOrders);
 /**
  * @swagger
  * /driver/change-password:
@@ -114,7 +121,7 @@ router.post("/login", loginDriver);
  *       500:
  *         description: خطأ في الخادم أثناء تغيير كلمة المرور.
  */
-router.patch("/change-password", authenticate, changePassword);
+router.patch("/change-password",authenticate, changePassword);
 
 /**
  * @swagger
@@ -154,7 +161,7 @@ router.patch("/change-password", authenticate, changePassword);
  *       500:
  *         description: خطأ في الخادم أثناء تحديث الموقع.
  */
-router.patch("/location", authenticate, updateLocation);
+router.patch("/location",authenticate, updateLocation);
 
 /**
  * @swagger
@@ -189,7 +196,7 @@ router.patch("/location", authenticate, updateLocation);
  *       500:
  *         description: خطأ في الخادم أثناء تحديث التوافر.
  */
-router.patch("/availability", authenticate, updateAvailability);
+router.patch("/availability",authenticate, updateAvailability);
 
 /**
  * @swagger

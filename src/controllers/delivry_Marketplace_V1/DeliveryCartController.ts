@@ -2,7 +2,10 @@
 import { Request, Response } from "express";
 import DeliveryCart from "../../models/delivry_Marketplace_V1/DeliveryCart";
 import { User } from "../../models/user";
-import mongoose from "mongoose";
+import geolib from "geolib";
+import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
+import PricingStrategy from "../../models/delivry_Marketplace_V1/PricingStrategy";
+import { calculateDeliveryPrice } from "../../utils/deliveryPricing";
 
 interface CartItemPayload {
   productId: string;
@@ -93,7 +96,7 @@ export const addOrUpdateCart = async (req: Request, res: Response) => {
     let cart = await DeliveryCart.findOne(filter);
 
     // 4) تأكد ألا يختلط متجر مختلف
-    if (cart && cart.storeId.toString() !== storeId) {
+    if (cart && cart.store.toString() !== storeId) {
       res.status(400).json({ message: "لا يمكن طلب من متجر مختلف" });
       return;
     }
@@ -116,7 +119,7 @@ export const addOrUpdateCart = async (req: Request, res: Response) => {
       // تحديث السلة الحالية
       for (const it of itemsArr) {
         const idx = cart.items.findIndex(
-          (i) => i.productId.toString() === it.productId
+          (i) => i.product.toString() === it.productId
         );
         if (idx > -1) {
           cart.items[idx].quantity += it.quantity;
@@ -128,14 +131,63 @@ export const addOrUpdateCart = async (req: Request, res: Response) => {
     }
 
     await cart.save();
-    res.status(201).json({ cart, cartId: cart.cartId });
+    res.status(201).json({ cart, cartId: cart.id });
     return;
   } catch (err: any) {
     res.status(500).json({ message: err.message });
     return;
   }
 };
+export const updateCartItemQuantity = async (req: Request, res: Response) => {
+  try {
+    const firebaseUID = req.user?.id;
+    if (!firebaseUID) {
+       res.status(401).json({ message: "Unauthorized" });
+       return;
+    }
 
+    const { productId } = req.params;
+    const { quantity } = req.body;
+    if (typeof quantity !== "number" || quantity < 1) {
+       res.status(400).json({ message: "Quantity must be ≥ 1" });
+       return;
+    }
+
+    // إيجاد المستخدم
+    const user = await User.findOne({ firebaseUID }).exec();
+    if (!user) {
+       res.status(404).json({ message: "User not found" });
+       return;
+    }
+
+    // إيجاد سلة المستخدم
+    const cart = await DeliveryCart.findOne({ userId: user._id });
+    if (!cart) {
+       res.status(404).json({ message: "Cart not found" });
+       return;
+    }
+
+    // إيجاد العنصر وتعديله
+    const idx = cart.items.findIndex(i => i.product.toString() === productId);
+    if (idx === -1) {
+       res.status(404).json({ message: "Item not found in cart" });
+       return;
+    }
+
+    // ضبط الكمية
+    cart.items[idx].quantity = quantity;
+
+    // إعادة حساب الإجمالي
+    cart.total = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    await cart.save();
+     res.json(cart);
+     return;
+  } catch (err: any) {
+     res.status(500).json({ message: err.message });
+     return;
+  }
+};
 export const getCart = async (req: Request, res: Response) => {
   try {
     const { cartId } = req.params;
@@ -238,6 +290,71 @@ export const getAbandonedCarts = async (_: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+export const getDeliveryFee = async (req: Request, res: Response) => {
+  try {
+    const firebaseUID = req.user.id;
+    const { addressId, deliveryMode = "split" } = req.query;
+
+    // تحميل المستخدم والعنوان
+    const user = await User.findOne({ firebaseUID });
+const address = user.addresses.find(a => a._id.toString() === addressId);
+if (!address) {
+   res.status(400).json({ message: "عنوان غير صالح" });
+   return;
+}
+    if (!address) {
+res.status(400).json({ message: "عنوان غير صالح" });
+      return;
+    } 
+
+    // جلب محتوى السلة
+    const cart = await DeliveryCart.findOne({ userId: user._id });
+    if (!cart) {
+res.status(400).json({ message: "السلة فارغة" });
+      return;
+    } 
+
+    // جلب الاستراتيجية
+    const strategy = await PricingStrategy.findOne({});
+    if (!strategy) throw new Error("Pricing strategy not configured");
+
+    let fee = 0;
+    if (deliveryMode === "unified") {
+      // استخدم أقرب متجر فقط
+      const storeId = cart.items[0].store;
+      const store = await DeliveryStore.findById(storeId);
+      const distKm =
+        geolib.getDistance(
+          { latitude: store.location.lat, longitude: store.location.lng },
+          { latitude: address.location.lat, longitude: address.location.lng }
+        ) / 1000;
+      fee = calculateDeliveryPrice(distKm, strategy);
+    } else {
+      // لكل متجر ضمن السلة
+   const grouped = cart.items.reduce((map, i) => {
+  const key = i.store.toString();           // ⇐ هنا
+  (map[key] = map[key] || []).push(i);
+  return map;
+}, {} as Record<string, typeof cart.items>);
+
+      for (const storeId of Object.keys(grouped)) {
+        const store = await DeliveryStore.findById(storeId);
+        const distKm =
+          geolib.getDistance(
+            { latitude: store.location.lat, longitude: store.location.lng },
+            { latitude: address.location.lat, longitude: address.location.lng }
+          ) / 1000;
+        fee += calculateDeliveryPrice(distKm, strategy);
+      }
+    }
+
+     res.json({ deliveryFee: fee, cartTotal: cart.total, grandTotal: cart.total + fee });
+     return;
+  } catch (err) {
+     res.status(500).json({ message: err.message });
+     return;
+  }
+};
 
 export const removeItem = async (
   req: Request<RemoveItemParams>,
@@ -253,7 +370,7 @@ export const removeItem = async (
     res.status(404).json({ message: "سلة غير موجودة" });
     return;
   }
-  cart.items = cart.items.filter((i) => i.productId.toString() !== productId);
+  cart.items = cart.items.filter((i) => i.product.toString() !== productId);
   cart.total = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   await cart.save();
   res.json(cart);

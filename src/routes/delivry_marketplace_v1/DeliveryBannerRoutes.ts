@@ -13,6 +13,7 @@ const router = express.Router();
  *   - name: DeliveryBanners
  *     description: إدارة شرائح الإعلان في سوق التوصيل V1
  */
+router.get("/admin", controller.getAllAdmin);
 
 /**
  * @swagger

@@ -54,6 +54,28 @@ export const updateUserAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error updating user", error: err });
   }
 };
+export const getAdminStats = async (req: Request, res: Response) => {
+  try {
+    const total    = await User.countDocuments();
+    const admins   = await User.countDocuments({ role: "admin" });
+    const superads = await User.countDocuments({ role: "superadmin" });
+    const users    = await User.countDocuments({ role: "user" });
+    const active   = await User.countDocuments({ isBlocked: false });
+    const blocked  = await User.countDocuments({ isBlocked: true });
+
+    res.json({
+      total,
+      admins: admins + superads,
+      users,
+      active,
+      blocked,
+      lastUpdated: new Date()
+    });
+  } catch (err) {
+    console.error("getAdminStats error:", err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
 
 export const updateUserRole = async (req: Request, res: Response) => {
   const { role } = req.body;

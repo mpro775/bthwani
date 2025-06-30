@@ -5,6 +5,7 @@ import * as controller from "../../controllers/delivry_Marketplace_V1/DeliveryPr
 import { verifyAdmin } from "../../middleware/verifyAdmin";
 import { verifyFirebase } from "../../middleware/verifyFirebase";
 import DeliveryProduct from "../../models/delivry_Marketplace_V1/DeliveryProduct";
+import { requireRole } from "../../middleware/auth";
 
 const router = express.Router();
 
@@ -47,7 +48,12 @@ const router = express.Router();
  *       500:
  *         description: خطأ في الخادم أثناء إنشاء المنتج.
  */
-router.post("/", verifyFirebase, verifyAdmin, controller.create);
+router.post(
+  "/",
+  verifyFirebase,
+  requireRole(["admin", "vendor", "superadmin"]),
+  controller.create
+);
 
 /**
  * @swagger
@@ -167,8 +173,12 @@ router.get("/:id", controller.getById);
  *       500:
  *         description: خطأ في الخادم أثناء تحديث المنتج.
  */
-router.put("/:id", verifyFirebase, verifyAdmin, controller.update);
-
+router.put(
+  "/products/:id",
+  verifyFirebase,
+  requireRole(["admin", "vendor", "superadmin"]),
+  controller.update
+);
 /**
  * @swagger
  * /delivery/products/{id}:
@@ -277,16 +287,16 @@ router.get("/nearby/new", async (req, res) => {
   const { lat, lng } = req.query;
 
   if (!lat || !lng) {
-     res.status(400).json({ message: "إحداثيات الموقع مطلوبة" });
-     return;
+    res.status(400).json({ message: "إحداثيات الموقع مطلوبة" });
+    return;
   }
 
   const parsedLat = parseFloat(lat as string);
   const parsedLng = parseFloat(lng as string);
 
   if (isNaN(parsedLat) || isNaN(parsedLng)) {
-     res.status(400).json({ message: "إحداثيات غير صالحة" });
-     return;
+    res.status(400).json({ message: "إحداثيات غير صالحة" });
+    return;
   }
 
   try {

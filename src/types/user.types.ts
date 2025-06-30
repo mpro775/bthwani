@@ -83,6 +83,8 @@ pushToken:  string ;
   foundResolvedCount?: number;
   badges?: string[];
   email?: string;
+  negativeRatingCount:number;
+  classification:string;
   isBlacklisted: boolean;
   phone?: string;
   profileImage?: string;

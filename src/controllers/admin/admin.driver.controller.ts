@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { Driver } from "../../models/Driver_app/driver";
-import { DeliveryOrder } from "../../models/Driver_app/deliveryOrder.model";
+import Order from "../../models/delivry_Marketplace_V1/Order";
+import Driver from "../../models/Driver_app/driver";    // ← هذا الاستيراد مطلوب
 
 export const createDriver = async (req: Request, res: Response) => {
   try {
@@ -12,9 +12,16 @@ export const createDriver = async (req: Request, res: Response) => {
       password,
       role,
       vehicleType,
-      city,
-      governorate,
       isFemaleDriver,
+      driverType,          // "primary" | "joker"
+      // بيانات العنوان ضرورية الآن
+      residenceLocation: {
+        address,
+        governorate,
+        city,
+        lat,
+        lng
+      }
     } = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,17 +32,42 @@ export const createDriver = async (req: Request, res: Response) => {
       password: hashedPassword,
       role,
       vehicleType,
-      city,
-      governorate,
       isFemaleDriver,
+      driverType,
+      // يوثق تلقائيًا لأن الإنشاء من الأدمن
+      isVerified: true,
+      // ملء residenceLocation من البودي
+      residenceLocation: { address, governorate, city, lat, lng }
     });
 
     res.status(201).json(driver);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: "Error creating driver", error });
   }
 };
 
+// تبديل نوع السائق (primary ↔ joker) مع ضبط نافذة الجوكر
+export const setJokerStatus = async (req: Request, res: Response) => {
+  const { driverType, jokerFrom, jokerTo } = req.body;
+  const driver = await Driver.findById(req.params.id);
+  if (!driver) {
+     res.status(404).json({ message: "Driver not found" });
+     return;
+  }
+
+  // عندما يكون joker نعين نافذة، وإلا نحذفها
+  driver.driverType = driverType;
+  if (driverType === "joker") {
+    driver.jokerFrom = new Date(jokerFrom);
+    driver.jokerTo   = new Date(jokerTo);
+  } else {
+    driver.jokerFrom = undefined;
+    driver.jokerTo   = undefined;
+  }
+
+  await driver.save();
+  res.json(driver);
+};
 export const toggleBan = async (req: Request, res: Response) => {
   const { id } = req.params;
   const driver = await Driver.findById(id);
@@ -123,13 +155,13 @@ export const assignDriver = async (req: Request, res: Response) => {
     return;
   }
 
-  const order = await DeliveryOrder.findById(orderId);
+  const order = await Order.findById(orderId);
   if (!order) {
     res.status(404).json({ message: "Order not found" });
     return;
   }
 
-  order.driverId = driverId;
+  order.driver     = driver.id;
   order.status = "in_progress";
   order.assignedAt = new Date();
 

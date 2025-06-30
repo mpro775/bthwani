@@ -5,6 +5,7 @@ import {
   createDriver,
   listDrivers,
   resetPassword,
+  setJokerStatus,
   toggleBan,
   updateWallet,
   verifyDriver,
@@ -13,7 +14,15 @@ import { authenticate, authorize } from "../../middleware/auth.middleware";
 import {
   confirmTransferToUser,
   initiateTransferToUser,
+  updateJokerWindow,
 } from "../../controllers/driver_app/driver.controller";
+import { verifyFirebase } from "../../middleware/verifyFirebase";
+import { requireRole } from "../../middleware/auth";
+import {
+  approveVacation,
+  getActiveDriversCount,
+} from "../../controllers/driver_app/vacation.controller";
+import { verifyAdmin } from "../../middleware/verifyAdmin";
 
 const router = express.Router();
 
@@ -77,9 +86,28 @@ const router = express.Router();
  */
 router.post(
   "/create",
-  authenticate,
-  authorize(["admin", "superadmin"]),
+ verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
   createDriver
+);
+
+router.put(
+  "/joker",
+ verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
+  setJokerStatus
+);
+router.patch(
+  "vacations/:id/approve",
+  verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
+  approveVacation
+);
+router.get(
+  "/active/count",
+ verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
+  getActiveDriversCount
 );
 
 /**
@@ -107,8 +135,12 @@ router.post(
  *       500:
  *         description: خطأ في الخادم أثناء جلب السائقين.
  */
-router.get("/", authenticate, authorize(["admin", "superadmin"]), listDrivers);
-
+router.get(
+  "/",
+  verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
+  listDrivers
+);
 /**
  * @swagger
  * /admin/drivers/{id}/block:
@@ -153,8 +185,8 @@ router.get("/", authenticate, authorize(["admin", "superadmin"]), listDrivers);
  */
 router.patch(
   "/:id/block",
-  authenticate,
-  authorize(["admin", "superadmin"]),
+  verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
   toggleBan
 );
 
@@ -194,8 +226,8 @@ router.patch(
  */
 router.patch(
   "/:id/verify",
-  authenticate,
-  authorize(["admin", "superadmin"]),
+ verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
   verifyDriver
 );
 
@@ -249,8 +281,8 @@ router.patch(
  */
 router.patch(
   "/:id/wallet",
-  authenticate,
-  authorize(["admin", "superadmin"]),
+ verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
   updateWallet
 );
 
@@ -297,8 +329,8 @@ router.patch(
  */
 router.patch(
   "/:id/reset-password",
-  authenticate,
-  authorize(["admin", "superadmin"]),
+ verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
   resetPassword
 );
 
@@ -411,5 +443,10 @@ router.post("/wallet/initiate-transfer", authenticate, initiateTransferToUser);
  *         description: خطأ في الخادم أثناء تأكيد عملية التحويل.
  */
 router.post("/wallet/confirm-transfer", authenticate, confirmTransferToUser);
-
+router.patch(
+  "/drivers/:id/joker-window",
+ verifyFirebase,                   // ← هذا يحلّل الـ JWT ويضع req.user
+verifyAdmin,
+  updateJokerWindow
+);
 export default router;

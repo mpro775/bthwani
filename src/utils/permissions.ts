@@ -2,7 +2,7 @@
 
 import { UserDocument } from "../models/user";
 
-type Context = "admin" | "userApp" | "driverApp";
+type Context = "superadmin" |"admin" | "userApp" | "driverApp";
 
 export const getUserCapabilities = (user: UserDocument, context: Context) => {
   const isAdminContext = context === "admin";
@@ -13,8 +13,9 @@ export const getUserCapabilities = (user: UserDocument, context: Context) => {
     // 🔒 صلاحيات إدارية
     canAccessAdminPanel: (user.role === "admin" || user.role === "superadmin") && isAdminContext,
     canManageUsers: user.role === "superadmin" && isAdminContext,
-    canViewStats: user.role === "admin" && isAdminContext,
-
+   canViewStats:
+      (user.role === "admin" || user.role === "superadmin") &&
+      isAdminContext,
     // 🚚 صلاحيات السائق
     canDeliver: user.isDriver && user.isAvailableForDelivery && isDriverApp,
     canAccessDriverApp: user.isDriver && isDriverApp,

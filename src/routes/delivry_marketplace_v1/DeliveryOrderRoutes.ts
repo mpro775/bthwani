@@ -8,16 +8,15 @@ import { verifyFirebase } from "../../middleware/verifyFirebase";
 import { body, validationResult } from "express-validator";
 import Order from "../../models/delivry_Marketplace_V1/Order";
 import { requireRole } from "../../middleware/auth";
+import { authVendor } from "../../middleware/authVendor";
+import { driverDeliver, driverPickUp } from "../../controllers/delivry_Marketplace_V1/orderDriver";
+import { getDeliveryFee } from "../../controllers/delivry_Marketplace_V1/DeliveryCartController";
+import { rateOrder } from "../../controllers/delivry_Marketplace_V1/orderRating";
 
 const router = express.Router();
 router.use(verifyFirebase);
 
-const createOrderValidators = [
-  body("addressId").isMongoId().withMessage("Invalid addressId"),
-  body("city").optional().isString(),
-  body("latitude").optional().isNumeric(),
-  body("longitude").optional().isNumeric(),
-];
+
 
 /**
  * @swagger
@@ -97,15 +96,7 @@ const createOrderValidators = [
  */
 router.post(
   "/",
-  createOrderValidators,
-  (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-    next();
-  },
+ verifyFirebase,
   controller.createOrder
 );
 
@@ -134,6 +125,17 @@ router.post(
  *       500:
  *         description: Server error while fetching vendor orders.
  */
+router.delete("/orders/:id", verifyFirebase, controller.cancelOrder);
+router.put(
+  ":id/vendor-accept",
+  authVendor,
+  controller.vendorAcceptOrder
+);
+router.post("/:id/rate", verifyFirebase, rateOrder);
+
+router.patch("/:id/driver-pickup", driverPickUp);
+router.patch("/:id/admin-status",verifyFirebase,verifyAdmin, controller.adminChangeStatus);
+router.patch("/:id/driver-deliver", driverDeliver);
 router.get(
   "/vendor/orders",
   requireRole(["vendor"]),
@@ -147,6 +149,8 @@ router.get(
     }
   }
 );
+
+router.get("/fee", getDeliveryFee);
 
 /**
  * @swagger
@@ -184,6 +188,7 @@ router.get(
  *         description: Server error while fetching user orders.
  */
 router.get("/user/:userId", controller.getUserOrders);
+router.post("/:id/repeat", controller.repeatOrder);
 
 /**
  * @swagger
@@ -297,6 +302,10 @@ router.get("/", verifyAdmin, controller.getAllOrders);
  *       500:
  *         description: Server error while updating order.
  */
-router.put("/:id", verifyAdminOrDriver, controller.updateOrderStatus);
+router.put(
+  ':id/status',
+  verifyFirebase,
+  controller.updateOrderStatus
+);
 
 export default router;

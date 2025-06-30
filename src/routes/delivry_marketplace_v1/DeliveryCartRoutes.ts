@@ -257,6 +257,14 @@ router.delete("/:cartId/items/:productId", controller.removeItem);
  */
 router.delete("/user/:userId/items/:productId", controller.removeItem);
 
+router.put(
+  "/items/:productId",
+  verifyFirebase,
+  controller.updateCartItemQuantity
+);
+
+router.get("/fee", controller.getDeliveryFee);
+
 /**
  * @swagger
  * /delivery/cart:

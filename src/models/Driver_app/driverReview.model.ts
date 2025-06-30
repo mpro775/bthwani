@@ -1,12 +1,22 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
-const DriverReviewSchema = new mongoose.Schema({
-  orderId: { type: mongoose.Schema.Types.ObjectId, ref: "DeliveryOrder", required: true },
-  driverId: { type: mongoose.Schema.Types.ObjectId, ref: "Driver", required: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+export interface IDriverReview extends Document {
+  order: mongoose.Types.ObjectId;
+  driver: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId;
+  rating: number;
+  comment?: string;
+}
+
+const DriverReviewSchema = new Schema<IDriverReview>({
+  order:  { type: Schema.Types.ObjectId, ref: "DeliveryOrder", required: true },
+  driver: { type: Schema.Types.ObjectId, ref: "Driver", required: true },
+  user:   { type: Schema.Types.ObjectId, ref: "User",   required: true },
   rating: { type: Number, min: 1, max: 5, required: true },
-  comment: String,
-  createdAt: { type: Date, default: Date.now }
-});
+  comment:{ type: String }
+}, { timestamps: true });
 
-export const DriverReview = mongoose.model("DriverReview", DriverReviewSchema);
+export default mongoose.model<IDriverReview>(
+  "DriverReview",
+  DriverReviewSchema
+);

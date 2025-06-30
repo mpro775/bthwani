@@ -77,15 +77,21 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String },
   profileImage: { type: String, default: "" },
 emailVerified: { type: Boolean, default: false },
-
+  classification: {
+    type: String,
+    enum: ["regular","bronze","silver","gold","vip"],
+    default: "regular",
+  },
+  negativeRatingCount: {
+    type: Number,
+    default: 0,
+  },
   role: {
     type: String,
     enum: ["user", "admin", "superadmin"],
     default: "user",
   },
 
-  governorate: String,
-  city: String,
   addresses: [AddressSchema],
 defaultAddressId: {
   type: mongoose.Schema.Types.ObjectId,
@@ -101,18 +107,8 @@ defaultAddressId: {
     default: "firebase",
   },
   firebaseUID: String,
-  subscription: {
-    planId: String,
-    startedAt: Date,
-    nextBilling: Date,
-  },
-  postsCount: { type: Number, default: 0 },
-  favoritesCount: { type: Number, default: 0 },
-  messagesCount: { type: Number, default: 0 },
-  followersCount: { type: Number, default: 0 },
 
-  followers: { type: [String], default: [] },
-  following: { type: [String], default: [] },
+
   loginHistory: [
     {
       ip: String,
@@ -131,119 +127,9 @@ defaultAddressId: {
   ],
 
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
-  // Lost & Found
-  lostAndFoundPosts: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "LostItem" },
-  ],
-  lostStats: {
-    views: { type: Number, default: 0 },
-    comments: { type: Number, default: 0 },
-  },
+ 
 
-  donationLocation: {
-    type: {
-      type: String,
-      enum: ["Point"],
-      default: undefined,
-    },
-    coordinates: {
-      type: [Number],
-      default: undefined,
-    },
-    updatedAt: Date,
-  },
 
-  // Blood Bank
-  bloodType: {
-    type: String,
-    enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
-  },
-  isAvailableToDonate: { type: Boolean, default: false },
-  bloodRequests: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "BloodRequest" },
-  ],
-
-  donationHistory: [
-    {
-      requestId: { type: mongoose.Schema.Types.ObjectId, ref: "BloodRequest" },
-      date: { type: Date, default: Date.now },
-      location: {
-        lat: Number,
-        lng: Number,
-      },
-    },
-  ],
-
-  // Freelancing & Jobs
-  isFreelancer: { type: Boolean, default: false },
-  freelancerProfile: {
-    type: new mongoose.Schema(
-      {
-        service: { type: String, default: "" },
-        bio: { type: String, default: "" },
-        portfolioImages: { type: [String], default: [] },
-        availability: {
-          type: [
-            {
-              day: {
-                type: String,
-                enum: [
-                  "Sunday",
-                  "Monday",
-                  "Tuesday",
-                  "Wednesday",
-                  "Thursday",
-                  "Friday",
-                  "Saturday",
-                ],
-              },
-              start: String,
-              end: String,
-            },
-          ],
-          default: [],
-        },
-
-        bookings: [
-          {
-            userId: { type: Types.ObjectId, ref: "User" },
-            date: Date,
-            status: {
-              type: String,
-              enum: ["pending", "confirmed", "completed", "cancelled"],
-              default: "pending",
-            },
-          },
-        ],
-        badges: {
-          type: [String],
-          default: [],
-        },
-        reviews: {
-          type: [
-            {
-              userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-              rating: { type: Number, min: 1, max: 5 },
-              comment: String,
-              createdAt: { type: Date, default: Date.now },
-              flagged: { type: Boolean, default: false },
-            },
-          ],
-          default: [],
-        },
-      },
-      { _id: false }
-    ),
-    default: () => ({}),
-  },
-  jobPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "JobOpportunity" }],
-
-  // Bookings
-  bookingPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
-  bookingStats: {
-    views: { type: Number, default: 0 },
-    orders: { type: Number, default: 0 },
-  },
 
   // Settings
   language: { type: String, enum: ["ar", "en"], default: "ar" },
@@ -258,18 +144,7 @@ defaultAddressId: {
 
   pushToken: { type: String },
 
-  favoriteCategories: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "ProductCategory" },
-  ],
-
-  foundResolvedCount: {
-    type: Number,
-    default: 0,
-  },
-  badges: {
-    type: [String],
-    default: [],
-  },
+ 
 
   // 💰 Wallet
   wallet: WalletSchema,

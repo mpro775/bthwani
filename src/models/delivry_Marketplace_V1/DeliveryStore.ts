@@ -1,10 +1,10 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 interface IWorkSchedule {
-  day: string;       // "monday"
+  day: string;       
   open: boolean;
-  from: string;      // "09:00"
-  to: string;        // "17:00"
+  from?: string;      // أصبح اختياري
+  to?: string;        // أصبح اختياري
 }
 
 export interface IDeliveryStore extends Document {
@@ -15,35 +15,46 @@ export interface IDeliveryStore extends Document {
   isActive: boolean;
   image?: string;
   logo?: string;
-  forceClosed?:boolean;
-  forceOpen?:boolean;
+  forceClosed: boolean;
+  forceOpen: boolean;
   schedule: IWorkSchedule[];
+  commissionRate:number;
+  takeCommission:boolean;
 }
 
-const storeSchema = new Schema<IDeliveryStore>(
-  {
-    name: { type: String, required: true },
-    address: { type: String, required: true },
-    category: { type: Schema.Types.ObjectId, ref: "DeliveryCategory", required: true },
-    location: {
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
-    },
-    isActive: { type: Boolean, default: true },
-    image: { type: String },
-    logo: { type: String },
-    schedule: [
-      {
-        day: { type: String, required: true },
-        open: { type: Boolean, default: false },
-        from: { type: String }, // توقيت 24 ساعة
-        to: { type: String },
-      },
-    ],
-      forceClosed: { type: Boolean, default: false },     // إغلاق إجباري
-  forceOpen:   { type: Boolean, default: false },     // فتح إجباري (يتجاوز الجدول)
+const storeSchema = new Schema<IDeliveryStore>({
+  name:        { type: String, required: true },
+  address:     { type: String, required: true },
+  category:    { type: Schema.Types.ObjectId, ref: "DeliveryCategory", required: true },
+  location: {
+    lat: { type: Number, required: true },
+    lng: { type: Number, required: true },
   },
-  { timestamps: true }
-);
+   commissionRate: {      // نسبة العمولة (مثال: 0.10 تعني 10%)
+    type: Number,
+    default: 0
+  },
+  takeCommission: {      // هل يأخذ المتجر عمولة أم لا؟
+    type: Boolean,
+    default: true
+  },
+  isActive:    { type: Boolean, default: true },
+  image:       { type: String },
+  logo:        { type: String },
+  forceClosed: { type: Boolean, default: false },
+  forceOpen:   { type: Boolean, default: false },
+  schedule: [
+    {
+      day:  { type: String, required: true },
+      open: { type: Boolean, default: false },
+      from: String,
+      to:   String,
+    }
+  ],
+ 
+}, { timestamps: true });
 
-export default mongoose.model<IDeliveryStore>("DeliveryStore", storeSchema);
+export default mongoose.model<IDeliveryStore>(
+  "DeliveryStore",
+  storeSchema
+);
