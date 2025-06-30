@@ -13,7 +13,8 @@ import { verifyTokenSocket } from "./middleware/verifyTokenSocket";
 // استيراد جوبز
 
 // استيراد Routes
-import adminRoutes from "./routes/admin/adminRoutes";
+import adminUsersRoutes from "./routes/admin/adminUsersRoutes";
+import adminAccountsRoutes from "./routes/admin/adminAccountsRoutes";
 import adminWithdrawalRoutes from "./routes/admin/admin.withdrawal.routes";
 
 import userRoutes from "./routes/userRoutes";
@@ -115,7 +116,8 @@ app.use(`${API_PREFIX}/admin/notifications`, adminNotificationRoutes);
 app.use(`${API_PREFIX}/topup`, topupRoutes);
 
 // قسم الأدمن وإدارة المنتجات
-app.use(`${API_PREFIX}/admin`, adminRoutes);
+app.use(`${API_PREFIX}/admin/accounts`, adminAccountsRoutes);
+app.use(`${API_PREFIX}/admin`, adminUsersRoutes);
 app.use(`${API_PREFIX}/admin/drivers`, adminDriverRoutes);
 app.use(`${API_PREFIX}/driver`, driverRoutes);
 app.use(`${API_PREFIX}/admin/withdrawals`, adminWithdrawalRoutes);

@@ -1,115 +1,113 @@
-// ==============================
-// src/controllers/adminController.ts
-// ==============================
-import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import { AdminUser, AdminRole, ModuleName, ModulePermissions } from '../../models/admin/AdminUser';
+// ======================================
+// src/controllers/adminUsersController.ts
+// ======================================
+import { Request, Response } from "express";
+import { User } from "../../models/user";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
-const TOKEN_EXPIRY = '1d'; // مدة صلاحية التوكن
-
-// تسجيل مدير جديد: تحقق من roles و permissions
-export const registerAdmin = async (req: Request, res: Response) => {
+// ✅ عرض كل المستخدمين
+export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const { username, password, roles, permissions } = req.body;
-    // تصفية الأدوار
-    const validRoles = Array.isArray(roles)
-      ? roles.filter((r: string) => Object.values(AdminRole).includes(r as AdminRole))
-      : [];
-    // تصفية الصلاحيات حسب ModuleName
-    const validPerms: Partial<Record<ModuleName, ModulePermissions>> = {};
-    if (permissions && typeof permissions === 'object') {
-      for (const key of Object.keys(permissions)) {
-        if (Object.values(ModuleName).includes(key as ModuleName)) {
-          validPerms[key as ModuleName] = permissions[key];
-        }
-      }
-    }
+    const { role, isVerified, isBanned } = req.query;
 
-    const exists = await AdminUser.findOne({ username });
-    if (exists) {
-res.status(400).json({ message: 'Username taken' });
-        return;
-    } 
+    const filter: any = {};
+    if (role) filter.role = role;
+    if (isVerified !== undefined) filter.isVerified = isVerified === "true";
+    if (isBanned !== undefined) filter.isBanned = isBanned === "true";
 
-    const admin = new AdminUser({
-      username,
-      password,
-      roles: validRoles.length ? validRoles : [AdminRole.ADMIN],
-      permissions: validPerms,
-    });
-    await admin.save();
-    res.status(201).json({ message: 'Admin created' });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// تسجيل الدخول للمدير: تحقق من البيانات وارجاع JWT
-export const loginAdmin = async (req: Request, res: Response) => {
-  try {
-    const { username, password } = req.body;
-    const admin = await AdminUser.findOne({ username });
-    if (!admin) {
-res.status(401).json({ message: 'Invalid credentials' });
-        return;
-    } 
-
-    const isMatch = await admin.comparePassword(password);
-    if (!isMatch) {
-res.status(401).json({ message: 'Invalid credentials' });
-        return;
-    } 
-
-    const token = jwt.sign(
-      { id: admin._id, roles: admin.roles, permissions: admin.permissions },
-      JWT_SECRET,
-      { expiresIn: TOKEN_EXPIRY }
+    const users = await User.find(filter).select(
+      "-security -wallet -activityLog"
     );
-    res.json({ token });
+    res.json(users);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Error fetching users", error: err });
   }
 };
 
-// جلب جميع المدراء (مع استثناء الباسورد)
-export const getAdmins = async (_req: Request, res: Response) => {
+// ✅ عرض مستخدم بالتفصيل
+export const getUserById = async (req: Request, res: Response) => {
   try {
-    const admins = await AdminUser.find().select('-password');
-    res.json(admins);
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    res.json(user);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Error fetching user", error: err });
   }
 };
 
-// تحديث الصلاحيات لمدير موجود
-export const updatePermissions = async (req: Request, res: Response) => {
+// ✅ تعديل صلاحيات مستخدم أو حظره
+export const updateUserAdmin = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { permissions } = req.body;
-
-    // تصفية الصلاحيات حسب ModuleName
-    const validPerms: Partial<Record<ModuleName, ModulePermissions>> = {};
-    if (permissions && typeof permissions === 'object') {
-      for (const key of Object.keys(permissions)) {
-        if (Object.values(ModuleName).includes(key as ModuleName)) {
-          validPerms[key as ModuleName] = permissions[key];
-        }
-      }
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
     }
 
-    const updated = await AdminUser.findByIdAndUpdate(
-      id,
-      { permissions: validPerms },
-      { new: true, runValidators: true }
-    ).select('-password');
+    const { role, isBanned, isVerified } = req.body;
+    if (role) user.role = role;
+    if (typeof isBanned === "boolean") user.isBanned = isBanned;
+    if (typeof isVerified === "boolean") user.isVerified = isVerified;
 
-    if (!updated) {
- res.status(404).json({ message: 'Admin not found' });
-        return;
-    }
-    res.json(updated);
+    await user.save();
+    res.status(200).json({ message: "User updated successfully" });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Error updating user", error: err });
   }
 };
+export const getAdminStats = async (req: Request, res: Response) => {
+  try {
+    const total    = await User.countDocuments();
+    const admins   = await User.countDocuments({ role: "admin" });
+    const superads = await User.countDocuments({ role: "superadmin" });
+    const users    = await User.countDocuments({ role: "user" });
+    const active   = await User.countDocuments({ isBlocked: false });
+    const blocked  = await User.countDocuments({ isBlocked: true });
+
+    res.json({
+      total,
+      admins: admins + superads,
+      users,
+      active,
+      blocked,
+      lastUpdated: new Date()
+    });
+  } catch (err) {
+    console.error("getAdminStats error:", err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+  const { role } = req.body;
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  user.role = role;
+  await user.save();
+  res.json({ message: "Role updated successfully" });
+};
+
+// export const loginDriver = async (req: Request, res: Response) => {
+//   const { phone, password } = req.body;
+//   try {
+//     const driver = await User.findOne({ phone });
+//     if (!driver) return res.status(400).json({ message: 'رقم الهاتف غير مسجل' });
+
+//     const isMatch = await driver.comparePassword(password);
+//     if (!isMatch) return res.status(400).json({ message: 'كلمة المرور غير صحيحة' });
+
+//     const token = jwt.sign({ id: driver._id }, process.env.JWT_SECRET || 'secret123', {
+//       expiresIn: '7d'
+//     });
+
+//     res.json({ token, driver });
+//   } catch (err: any) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
