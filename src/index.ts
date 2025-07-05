@@ -22,9 +22,7 @@ import mediaRoutes from "./routes/mediaRoutes";
 import driverRoutes from "./routes/driver_app/driver.routes";
 import adminDriverRoutes from "./routes/admin/admin.driver.routes";
 
-
 import topupRoutes from "./routes/Wallet_V8/topupRoutes";
-
 
 import driverWithdrawalRoutes from "./routes/driver_app/driver.withdrawal.routes";
 import vendorRoutes from "./routes/vendor_app/vendor.routes";
@@ -45,6 +43,7 @@ import attendanceRoutes from "./routes/er/attendance.routes";
 import leaveRequestRoutes from "./routes/er/leaveRequest.routes";
 import performanceGoalRoutes from "./routes/er/performanceGoal.routes";
 import pricingStrategyRoutes from "./routes/delivry_marketplace_v1/pricingStrategy";
+import deliveryPromotionRoutes from "./routes/delivry_marketplace_v1/promotion.routes";
 
 dotenv.config();
 
@@ -101,7 +100,6 @@ const API_PREFIX = "/api/v1";
 // قسم المستخدمين والمصادقة
 app.use(`${API_PREFIX}/users`, userRoutes);
 
-
 // قسم الوسائط والتحميلات
 app.use(`${API_PREFIX}/media`, mediaRoutes);
 app.use("/api/v1", StatestoreRoutes);
@@ -130,10 +128,10 @@ app.use(`${API_PREFIX}/delivery/cart`, deliveryCartRouter);
 app.use(`${API_PREFIX}/delivery/order`, deliveryOrderRoutes);
 app.use(`${API_PREFIX}/delivery/subcategories`, deliverySubCategoryRoutes);
 app.use(`${API_PREFIX}/delivery/banners`, deliveryBannerRoutes);
+app.use(`${API_PREFIX}/delivery/promotions`, deliveryPromotionRoutes);
 
 // قسم طلبات وسائق التوصيل
 app.use(`${API_PREFIX}/deliveryapp/withdrawals`, driverWithdrawalRoutes);
-
 
 // قسم التاجر
 app.use(`${API_PREFIX}/vendor`, vendorRoutes);
@@ -153,7 +151,6 @@ app.get(`${API_PREFIX}/debug/uploads`, (_, res) => {
 app.get("/", (_, res) => {
   res.send("bThwani backend is running ✅");
 });
-
 
 // إعدادات السيرفر وقاعدة البيانات
 const PORT = process.env.PORT || 3000;

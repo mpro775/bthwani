@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Driver } from "../../models/Driver_app/driver";
+import  Driver  from "../../models/Driver_app/driver";
 import { WithdrawalRequest } from "../../models/Wallet_V8/WithdrawalRequest";
 
 export const requestWithdrawal = async (req: Request, res: Response) => {

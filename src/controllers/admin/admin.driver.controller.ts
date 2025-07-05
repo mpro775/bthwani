@@ -162,7 +162,7 @@ export const assignDriver = async (req: Request, res: Response) => {
   }
 
   order.driver     = driver.id;
-  order.status = "in_progress";
+  order.status = "preparing";
   order.assignedAt = new Date();
 
   await order.save();

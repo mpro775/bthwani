@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import DeliveryStore, {
-} from "../../models/delivry_Marketplace_V1/DeliveryStore";
+import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
 import { computeIsOpen } from "../../utils/storeStatus";
 import Vendor from "../../models/vendor_app/Vendor";
 
@@ -9,17 +8,17 @@ import Vendor from "../../models/vendor_app/Vendor";
 export const create = async (req: Request, res: Response) => {
   try {
     const body: any = { ...req.body };
-     if (req.user.role === "vendor") {
+    if (req.user.role === "vendor") {
       const vendor = await Vendor.findOne({ user: req.user.id });
       if (!vendor) {
-         res.status(403).json({ message: "ليس لديك حساب تاجر" });
-         return;
+        res.status(403).json({ message: "ليس لديك حساب تاجر" });
+        return;
       }
       if (vendor.store.toString() !== req.body.store) {
-         res
+        res
           .status(403)
           .json({ message: "ليس لديك صلاحية إضافة منتج لهذا المتجر" });
-          return;
+        return;
       }
     }
     // Convert category to ObjectId if valid
@@ -51,6 +50,19 @@ export const create = async (req: Request, res: Response) => {
     if (!body.image || !body.logo) {
       res.status(400).json({ message: "Image and logo URLs are required" });
       return;
+    }
+
+    // تحويل pricingStrategy إلى ObjectId إذا موجودة وصحيحة
+    if (
+      body.pricingStrategy &&
+      mongoose.Types.ObjectId.isValid(body.pricingStrategy)
+    ) {
+      body.pricingStrategy = new mongoose.Types.ObjectId(body.pricingStrategy);
+    } else if (
+      body.pricingStrategy === "" ||
+      body.pricingStrategy === undefined
+    ) {
+      body.pricingStrategy = null;
     }
 
     const data = new DeliveryStore(body);
@@ -138,17 +150,17 @@ export const update = async (req: Request, res: Response) => {
       delete body.lat;
       delete body.lng;
     }
-     if (req.user.role === "vendor") {
+    if (req.user.role === "vendor") {
       const vendor = await Vendor.findOne({ user: req.user.id });
       if (!vendor) {
-         res.status(403).json({ message: "ليس لديك حساب تاجر" });
-         return;
+        res.status(403).json({ message: "ليس لديك حساب تاجر" });
+        return;
       }
       if (vendor.store.toString() !== req.body.store) {
-         res
+        res
           .status(403)
           .json({ message: "ليس لديك صلاحية إضافة منتج لهذا المتجر" });
-          return;
+        return;
       }
     }
 
@@ -165,6 +177,19 @@ export const update = async (req: Request, res: Response) => {
     // Convert category to ObjectId if valid
     if (body.category && mongoose.Types.ObjectId.isValid(body.category)) {
       body.category = new mongoose.Types.ObjectId(body.category);
+    }
+
+    // تحويل pricingStrategy إلى ObjectId إذا موجودة وصحيحة
+    if (
+      body.pricingStrategy &&
+      mongoose.Types.ObjectId.isValid(body.pricingStrategy)
+    ) {
+      body.pricingStrategy = new mongoose.Types.ObjectId(body.pricingStrategy);
+    } else if (
+      body.pricingStrategy === "" ||
+      body.pricingStrategy === undefined
+    ) {
+      body.pricingStrategy = null;
     }
 
     const updated = await DeliveryStore.findByIdAndUpdate(req.params.id, body, {
@@ -185,23 +210,22 @@ export const update = async (req: Request, res: Response) => {
 // Delete a delivery store
 export const remove = async (req: Request, res: Response) => {
   try {
-     if (req.user.role === "vendor") {
+    if (req.user.role === "vendor") {
       const vendor = await Vendor.findOne({ user: req.user.id });
       if (!vendor) {
-         res.status(403).json({ message: "ليس لديك حساب تاجر" });
-         return;
+        res.status(403).json({ message: "ليس لديك حساب تاجر" });
+        return;
       }
       if (vendor.store.toString() !== req.body.store) {
-         res
+        res
           .status(403)
           .json({ message: "ليس لديك صلاحية إضافة منتج لهذا المتجر" });
-          return;
+        return;
       }
     }
     await DeliveryStore.findByIdAndDelete(req.params.id);
-  
-    res.json({ message: "DeliveryStore deleted" });
 
+    res.json({ message: "DeliveryStore deleted" });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

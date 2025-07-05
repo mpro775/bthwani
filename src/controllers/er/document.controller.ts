@@ -1,6 +1,6 @@
 // server/src/controllers/document.controller.ts
-import { Request, Response } from 'express';
-import { Document as Doc } from '../models/document.model';
+import { Request, Response } from "express";
+import { Document as Doc } from "../../models/er/document.model";
 
 export const getAllDocuments = async (req: Request, res: Response) => {
   const list = await Doc.find();
@@ -8,7 +8,7 @@ export const getAllDocuments = async (req: Request, res: Response) => {
 };
 
 export const getDocumentById = async (req: Request, res: Response) => {
-  const doc = await Doc.findById(req.params.id).populate('asset');
+  const doc = await Doc.findById(req.params.id).populate("asset");
   res.json(doc);
 };
 
@@ -19,7 +19,9 @@ export const createDocument = async (req: Request, res: Response) => {
 };
 
 export const updateDocument = async (req: Request, res: Response) => {
-  const updated = await Doc.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const updated = await Doc.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
   res.json(updated);
 };
 

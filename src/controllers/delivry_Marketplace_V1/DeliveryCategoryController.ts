@@ -21,14 +21,15 @@ export const create = async (req: Request, res: Response) => {
 };
 
 // Read all
-export const getAll = async (req: Request, res: Response) => {
-  try {
-    const data = await DeliveryCategory.find();
-    res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
+export const getAll = async (req, res) => {
+  const { search } = req.query;
+  const filter = search
+    ? { name: { $regex: search, $options: "i" } }
+    : {};
+  const data = await DeliveryCategory.find(filter);
+  res.json(data);
 };
+
 
 // Read by ID
 export const getById = async (req: Request, res: Response) => {

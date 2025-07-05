@@ -1,9 +1,8 @@
 // server/src/controllers/dashboard.controller.ts
 import { Request, Response } from "express";
-import { Stat } from "../models/stat.model";
-import { LedgerEntry } from "../models/ledgerEntry.model";
-import { Task } from "../models/task.model";
-import { PerformanceReview } from "../models/performanceReview.model";
+import { LedgerEntry } from "../../models/er/ledgerEntry.model";
+import { Task } from "../../models/er/task.model";
+import { PerformanceReview } from "../../models/er/performanceReview.model";
 
 // مؤشرات مالية فورية
 export const getFinancialOverview = async (req: Request, res: Response) => {

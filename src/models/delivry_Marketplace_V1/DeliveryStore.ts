@@ -1,10 +1,10 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 interface IWorkSchedule {
-  day: string;       
+  day: string;
   open: boolean;
-  from?: string;      // أصبح اختياري
-  to?: string;        // أصبح اختياري
+  from?: string; // أصبح اختياري
+  to?: string; // أصبح اختياري
 }
 
 export interface IDeliveryStore extends Document {
@@ -18,43 +18,54 @@ export interface IDeliveryStore extends Document {
   forceClosed: boolean;
   forceOpen: boolean;
   schedule: IWorkSchedule[];
-  commissionRate:number;
-  takeCommission:boolean;
+  commissionRate: number;
+  takeCommission: boolean;
+  pricingStrategy?: mongoose.Types.ObjectId | null;
 }
 
-const storeSchema = new Schema<IDeliveryStore>({
-  name:        { type: String, required: true },
-  address:     { type: String, required: true },
-  category:    { type: Schema.Types.ObjectId, ref: "DeliveryCategory", required: true },
-  location: {
-    lat: { type: Number, required: true },
-    lng: { type: Number, required: true },
+const storeSchema = new Schema<IDeliveryStore>(
+  {
+    name: { type: String, required: true },
+    address: { type: String, required: true },
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: "DeliveryCategory",
+      required: true,
+    },
+    location: {
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true },
+    },
+    commissionRate: {
+      // نسبة العمولة (مثال: 0.10 تعني 10%)
+      type: Number,
+      default: 0,
+    },
+    takeCommission: {
+      // هل يأخذ المتجر عمولة أم لا؟
+      type: Boolean,
+      default: true,
+    },
+    isActive: { type: Boolean, default: true },
+    image: { type: String },
+    logo: { type: String },
+    forceClosed: { type: Boolean, default: false },
+    forceOpen: { type: Boolean, default: false },
+    schedule: [
+      {
+        day: { type: String, required: true },
+        open: { type: Boolean, default: false },
+        from: String,
+        to: String,
+      },
+    ],
+    pricingStrategy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PricingStrategy",
+      default: null, // إذا null يستخدم الاستراتيجية العامة
+    },
   },
-   commissionRate: {      // نسبة العمولة (مثال: 0.10 تعني 10%)
-    type: Number,
-    default: 0
-  },
-  takeCommission: {      // هل يأخذ المتجر عمولة أم لا؟
-    type: Boolean,
-    default: true
-  },
-  isActive:    { type: Boolean, default: true },
-  image:       { type: String },
-  logo:        { type: String },
-  forceClosed: { type: Boolean, default: false },
-  forceOpen:   { type: Boolean, default: false },
-  schedule: [
-    {
-      day:  { type: String, required: true },
-      open: { type: Boolean, default: false },
-      from: String,
-      to:   String,
-    }
-  ],
- 
-}, { timestamps: true });
-
-export default mongoose.model<IDeliveryStore>(
-  "DeliveryStore",
-  storeSchema
+  { timestamps: true }
 );
+
+export default mongoose.model<IDeliveryStore>("DeliveryStore", storeSchema);
