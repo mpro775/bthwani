@@ -20,8 +20,13 @@ export interface IDeliveryStore extends Document {
   schedule: IWorkSchedule[];
   commissionRate: number;
   takeCommission: boolean;
+  isTrending:boolean;
+  isFeatured:boolean;
   pricingStrategy?: mongoose.Types.ObjectId | null;
+  pricingStrategyType:string;
 }
+
+// src/models/delivry_Marketplace_V1/DeliveryStore.ts
 
 const storeSchema = new Schema<IDeliveryStore>(
   {
@@ -37,14 +42,24 @@ const storeSchema = new Schema<IDeliveryStore>(
       lng: { type: Number, required: true },
     },
     commissionRate: {
-      // نسبة العمولة (مثال: 0.10 تعني 10%)
       type: Number,
       default: 0,
     },
     takeCommission: {
-      // هل يأخذ المتجر عمولة أم لا؟
       type: Boolean,
       default: true,
+    },
+    isTrending: { type: Boolean, default: false },    // متجر رائج
+    isFeatured: { type: Boolean, default: false },    // متجر مميز
+    pricingStrategy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PricingStrategy",
+      default: null,
+    },
+    pricingStrategyType: {
+      type: String,
+      enum: ["auto", "manual", ""],
+      default: "",
     },
     isActive: { type: Boolean, default: true },
     image: { type: String },
@@ -59,11 +74,6 @@ const storeSchema = new Schema<IDeliveryStore>(
         to: String,
       },
     ],
-    pricingStrategy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "PricingStrategy",
-      default: null, // إذا null يستخدم الاستراتيجية العامة
-    },
   },
   { timestamps: true }
 );

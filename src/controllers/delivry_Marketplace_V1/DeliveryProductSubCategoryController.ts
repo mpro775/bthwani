@@ -14,8 +14,7 @@ export const create = async (req: Request, res: Response) => {
 export const getByStore = async (req: Request, res: Response) => {
   try {
     const { storeId } = req.params;
-    const subs = await DeliveryProductSubCategory.find({ storeId });
-    res.json(subs);
+const subs = await DeliveryProductSubCategory.find({ storeId: storeId });    res.json(subs);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

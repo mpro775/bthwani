@@ -51,7 +51,7 @@ const router = express.Router();
 router.post(
   "/",
   verifyFirebase,
-  requireRole(["admin", "vendor", "superadmin"]),
+  verifyAdmin,
   controller.create
 );
 
@@ -174,9 +174,9 @@ router.get("/:id", controller.getById);
  *         description: خطأ في الخادم أثناء تحديث المنتج.
  */
 router.put(
-  "/products/:id",
+  "/:id",
   verifyFirebase,
-  requireRole(["admin", "vendor", "superadmin"]),
+  verifyAdmin,
   controller.update
 );
 /**

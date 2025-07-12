@@ -64,6 +64,12 @@ export const create = async (req: Request, res: Response) => {
     ) {
       body.pricingStrategy = null;
     }
+if ("isTrending" in body) body.isTrending = !!body.isTrending;
+if ("isFeatured" in body) body.isFeatured = !!body.isFeatured;
+if ("pricingStrategyType" in body) body.pricingStrategyType = body.pricingStrategyType || "";
+
+if ("commissionRate" in body) body.commissionRate = parseFloat(body.commissionRate) || 0;
+
 
     const data = new DeliveryStore(body);
     await data.save();

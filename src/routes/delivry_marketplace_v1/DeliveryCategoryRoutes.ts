@@ -59,6 +59,10 @@ const router = express.Router();
  */
 router.post("/", verifyFirebase, verifyAdmin, controller.create);
 
+router.get("/children/:parentId", controller.getChildren);
+
+router.get("/main", controller.getMainCategories);
+
 /**
  * @swagger
  * /delivery/categories/{id}:

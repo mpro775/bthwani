@@ -60,8 +60,44 @@ const router = express.Router();
  *       500:
  *         description: خطأ في الخادم أثناء إنشاء الفئة الفرعية.
  */
-router.post("/", verifyFirebase,   requireRole(['admin','vendor','superadmin']), controller.create);
+router.post("/", verifyFirebase,  verifyAdmin, controller.create);
 
+/**
+ * @swagger
+ * /delivery/product-subcategories/store/{storeId}:
+ *   get:
+ *     summary: جلب الفئات الفرعية الخاصة بمحّل معين
+ *     description: يعرض لجميع المستخدمين المصادق عليهم قائمة الفئات الفرعية المرتبطة بمحّل محدد بواسطة معرّف المحل.
+ *     tags: [DeliveryProductSubCategories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: storeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: mongoId
+ *         description: معرّف المحل المطلوب جلب الفئات الفرعية الخاصة به
+ *     responses:
+ *       200:
+ *         description: تم جلب قائمة الفئات الفرعية الخاصة بالمحل بنجاح.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/DeliveryProductSubCategory'
+ *       400:
+ *         description: معرّف المحل غير صالح.
+ *       401:
+ *         description: توكين غير صالح أو مفقود.
+ *       404:
+ *         description: لم يتم العثور على الفئات الفرعية للمحل المطلوب.
+ *       500:
+ *         description: خطأ في الخادم أثناء جلب الفئات الفرعية.
+ */
+router.get("/store/:storeId", controller.getByStore);
 /**
  * @swagger
  * /delivery/product-subcategories:
@@ -177,7 +213,7 @@ router.get("/:id", controller.getById);
  *       500:
  *         description: خطأ في الخادم أثناء تعديل الفئة الفرعية.
  */
-router.put("/:id", verifyFirebase,   requireRole(['admin','vendor','superadmin']), controller.update);
+router.put("/:id", verifyFirebase,   verifyAdmin, controller.update);
 
 /**
  * @swagger
@@ -210,43 +246,8 @@ router.put("/:id", verifyFirebase,   requireRole(['admin','vendor','superadmin']
  *       500:
  *         description: خطأ في الخادم أثناء حذف الفئة الفرعية.
  */
-router.delete("/:id", verifyFirebase,   requireRole(['admin','vendor','superadmin']), controller.remove);
+router.delete("/:id", verifyFirebase,   verifyAdmin, controller.remove);
 
-/**
- * @swagger
- * /delivery/product-subcategories/store/{storeId}:
- *   get:
- *     summary: جلب الفئات الفرعية الخاصة بمحّل معين
- *     description: يعرض لجميع المستخدمين المصادق عليهم قائمة الفئات الفرعية المرتبطة بمحّل محدد بواسطة معرّف المحل.
- *     tags: [DeliveryProductSubCategories]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: storeId
- *         required: true
- *         schema:
- *           type: string
- *           format: mongoId
- *         description: معرّف المحل المطلوب جلب الفئات الفرعية الخاصة به
- *     responses:
- *       200:
- *         description: تم جلب قائمة الفئات الفرعية الخاصة بالمحل بنجاح.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/DeliveryProductSubCategory'
- *       400:
- *         description: معرّف المحل غير صالح.
- *       401:
- *         description: توكين غير صالح أو مفقود.
- *       404:
- *         description: لم يتم العثور على الفئات الفرعية للمحل المطلوب.
- *       500:
- *         description: خطأ في الخادم أثناء جلب الفئات الفرعية.
- */
-router.get("/store/:storeId", controller.getByStore);
+
 
 export default router;

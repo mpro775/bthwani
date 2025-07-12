@@ -1,28 +1,28 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
 interface IRating {
-  company:      number;  // 1–5
-  order:        number;  // 1–5
-  driver:       number;  // 1–5
-  comments?:    string;
-  ratedAt:      Date;
+  company: number; // 1–5
+  order: number; // 1–5
+  driver: number; // 1–5
+  comments?: string;
+  ratedAt: Date;
 }
 
 export type OrderStatus =
-  | "pending_confirmation"   // في انتظار تأكيد الطلب من الإدارة
-  | "under_review"           // قيد المراجعة → تُعطى للدليفري
-  | "preparing"              // قيد التحضير (داخل المطعم/المتجر)
-  | "out_for_delivery"       // في الطريق إليك (من الدليفري)
-  | "delivered"              // تم التوصيل
-  | "returned"               // الارجاع (من الأدمن)
-  | "cancelled";             // الالغاء (من الأدمن)
+  | "pending_confirmation" // في انتظار تأكيد الطلب من الإدارة
+  | "under_review" // قيد المراجعة → تُعطى للدليفري
+  | "preparing" // قيد التحضير (داخل المطعم/المتجر)
+  | "out_for_delivery" // في الطريق إليك (من الدليفري)
+  | "delivered" // تم التوصيل
+  | "returned" // الارجاع (من الأدمن)
+  | "cancelled"; // الالغاء (من الأدمن)
 interface IStatusHistoryEntry {
   status: string;
   changedAt: Date;
   changedBy: "admin" | "store" | "driver" | "customer";
 }
 
-  interface ISubOrder {
+interface ISubOrder {
   store: Types.ObjectId;
   items: {
     product: Types.ObjectId;
@@ -30,11 +30,10 @@ interface IStatusHistoryEntry {
     unitPrice: number;
   }[];
   driver?: Types.ObjectId;
-    deliveryReceiptNumber?: string;    // رقم السند
+  deliveryReceiptNumber?: string; // رقم السند
 
   status: OrderStatus;
-    statusHistory: IStatusHistoryEntry[];
-
+  statusHistory: IStatusHistoryEntry[];
 }
 
 export interface IDeliveryOrder extends Document {
@@ -48,13 +47,12 @@ export interface IDeliveryOrder extends Document {
   }[];
   subOrders: ISubOrder[];
   price: number;
-  deliveryFee:number;
-  companyShare:number;
-  platformShare:number;
-    rating?: IRating;    // إضافة حقل اختياري للتقييم
-
-  walletUsed:number;
-  cashDue:number;
+  deliveryFee: number;
+  companyShare: number;
+  platformShare: number;
+  rating?: IRating; // إضافة حقل اختياري للتقييم
+  walletUsed: number;
+  cashDue: number;
   statusHistory: IStatusHistoryEntry[];
 
   address: {
@@ -67,11 +65,11 @@ export interface IDeliveryOrder extends Document {
   paymentMethod: "wallet" | "cod";
   paid: boolean;
   status: OrderStatus;
-    returnReason?: string;      // سبب الارجاع/الإلغاء
+  returnReason?: string; // سبب الارجاع/الإلغاء
   returnBy?: "admin" | "customer" | "driver" | "store";
   scheduledFor?: Date;
   assignedAt?: Date;
-    deliveryReceiptNumber?: string;    // رقم السند
+  deliveryReceiptNumber?: string; // رقم السند
 
   deliveredAt?: Date;
   notes?: string;
@@ -79,23 +77,23 @@ export interface IDeliveryOrder extends Document {
 
 const statusHistorySchema = new Schema<IStatusHistoryEntry>(
   {
-    status:    { type: String, required: true },
-    changedAt: { type: Date,   required: true, default: Date.now },
+    status: { type: String, required: true },
+    changedAt: { type: Date, required: true, default: Date.now },
     changedBy: {
       type: String,
       enum: ["admin", "store", "driver", "customer"],
-      required: true
+      required: true,
     },
   },
   { _id: false }
 );
 const ratingSchema = new Schema<IRating>(
   {
-    company:   { type: Number, min: 1, max: 5, required: true },
-    order:     { type: Number, min: 1, max: 5, required: true },
-    driver:    { type: Number, min: 1, max: 5, required: true },
-    comments:  { type: String },
-    ratedAt:   { type: Date, default: Date.now },
+    company: { type: Number, min: 1, max: 5, required: true },
+    order: { type: Number, min: 1, max: 5, required: true },
+    driver: { type: Number, min: 1, max: 5, required: true },
+    comments: { type: String },
+    ratedAt: { type: Date, default: Date.now },
   },
   { _id: false }
 );
@@ -134,48 +132,58 @@ const orderSchema = new Schema<IDeliveryOrder>(
           },
         ],
         driver: { type: Schema.Types.ObjectId, ref: "Driver" },
-       status: {
-      type: String,
-      enum: [
-        "pending_confirmation",
-        "under_review",
-        "preparing",
-        "out_for_delivery",
-        "delivered",
-        "returned",
-        "cancelled",
-      ],
-      default: "pending_confirmation",
-    },
-statusHistory: {
-      type: [statusHistorySchema],
-      default: [{ status: "pending_confirmation", changedAt: new Date(), changedBy: "customer" }],
-    },
-    deliveryReceiptNumber: {
-  type: String,
-  required: function () { return this.status === "delivered"; }
-},
-    returnReason: { type: String },
-    returnBy: {
-      type: String,
-      enum: ["admin", "customer", "driver", "store"],
-    },
-    },
+        status: {
+          type: String,
+          enum: [
+            "pending_confirmation",
+            "under_review",
+            "preparing",
+            "out_for_delivery",
+            "delivered",
+            "returned",
+            "cancelled",
+          ],
+          default: "pending_confirmation",
+        },
+        statusHistory: {
+          type: [statusHistorySchema],
+          default: [
+            {
+              status: "pending_confirmation",
+              changedAt: new Date(),
+              changedBy: "customer",
+            },
+          ],
+        },
+        deliveryReceiptNumber: {
+          type: String,
+          required: function () {
+            return this.status === "delivered";
+          },
+        },
+        returnReason: { type: String },
+        returnBy: {
+          type: String,
+          enum: ["admin", "customer", "driver", "store"],
+        },
+      },
     ],
     rating: {
       type: ratingSchema,
       default: null,
     },
     deliveryReceiptNumber: {
-  type: String,
-  required: function () { return this.status === "delivered"; }
-},
+      type: String,
+      required: function () {
+        return this.status === "delivered";
+      },
+    },
     price: { type: Number, required: true },
     companyShare: { type: Number, required: true }, // جديد
-platformShare:{ type: Number, required: true }, // جديد
-deliveryFee: { type: Number, required: true },
-walletUsed: { type: Number, default: 0 },      // ما خصمه من المحفظة
-cashDue:    { type: Number, default: 0 },      // المبلغ المتبقي يدفع كاش
+    platformShare: { type: Number, required: true }, // جديد
+    deliveryFee: { type: Number, required: true },
+    walletUsed: { type: Number, default: 0 }, // ما خصمه من المحفظة
+    cashDue: { type: Number, default: 0 }, // المبلغ المتبقي يدفع كاش
     address: {
       label: { type: String, required: true },
       street: { type: String, required: true },
@@ -192,7 +200,7 @@ cashDue:    { type: Number, default: 0 },      // المبلغ المتبقي ي
     },
     paymentMethod: { type: String, enum: ["wallet", "cod"], required: true },
     paid: { type: Boolean, default: false },
-   status: {
+    status: {
       type: String,
       enum: [
         "pending_confirmation",
@@ -207,7 +215,13 @@ cashDue:    { type: Number, default: 0 },      // المبلغ المتبقي ي
     },
     statusHistory: {
       type: [statusHistorySchema],
-      default: [{ status: "pending_confirmation", changedAt: new Date(), changedBy: "customer" }],
+      default: [
+        {
+          status: "pending_confirmation",
+          changedAt: new Date(),
+          changedBy: "customer",
+        },
+      ],
     },
     returnReason: { type: String },
     returnBy: {
