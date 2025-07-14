@@ -252,15 +252,9 @@ router.patch("/security/verify-pin", verifyFirebase, verifyPinCode);
  *             schema:
  *               type: object
  *               properties:
- *                 postsCount:
+ *                 favoritesCount:
  *                   type: integer
- *                   example: 12
- *                 followersCount:
- *                   type: integer
- *                   example: 45
- *                 followingCount:
- *                   type: integer
- *                   example: 32
+ *                   example: 5
  *       401:
  *         description: توكين غير صالح أو مفقود.
  */

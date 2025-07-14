@@ -157,15 +157,8 @@ defaultAddressId: {
   // 📘 Activity Log
   activityLog: [ActivityLogSchema],
 });
-UserSchema.index({ donationLocation: "2dsphere" }, { sparse: true });
 
-export interface UserDocument extends Document, UserType {
-  donationLocation?: {
-    type: "Point";
-    coordinates: [number, number];
-    updatedAt?: Date;
-  };
-}
+export interface UserDocument extends Document, UserType {}
 export const User: Model<UserDocument> = mongoose.model<UserDocument>(
   "User",
   UserSchema
