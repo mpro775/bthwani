@@ -1,6 +1,6 @@
 // server/src/controllers/document.controller.ts
 import { Request, Response } from "express";
-import { Document as Doc } from "../../models/er/document.model";
+import { Documentes as Doc } from "../../models/er/document.model";
 
 export const getAllDocuments = async (req: Request, res: Response) => {
   const list = await Doc.find();

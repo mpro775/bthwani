@@ -1,6 +1,6 @@
 // server/src/controllers/asset.controller.ts
 import { Request, Response } from "express";
-import { Asset } from "../models/asset.model";
+import { Asset } from "../../models/er/asset.model";
 
 export const getAllAssets = async (req: Request, res: Response) => {
   const list = await Asset.find();

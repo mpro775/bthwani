@@ -13,7 +13,7 @@ export interface IDocument extends Document {
   location?: string;        // الجهة أو المدينة
 }
 
-const DocumentSchema = new Schema<IDocument>({
+const DocumentsSchema = new Schema<IDocument>({
   title:       { type: String, required: true },
   type:        { type: String, required: true },
   asset:       { type: Schema.Types.ObjectId, ref: 'Asset' },
@@ -25,4 +25,4 @@ const DocumentSchema = new Schema<IDocument>({
   location:    { type: String },
 }, { timestamps: true });
 
-export const Documente = model<IDocument>('Document', DocumentSchema);
+export const Documentes = model<IDocument>('Documents', DocumentsSchema);
