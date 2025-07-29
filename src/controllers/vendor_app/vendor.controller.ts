@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import Vendor, { IVendor } from "../../models/vendor_app/Vendor";
 import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
 import Order from "../../models/delivry_Marketplace_V1/Order";
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 export const vendorLogin = async (req, res) => {
