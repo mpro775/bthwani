@@ -9,6 +9,8 @@ interface AuthPayload extends JwtPayload {
     date: Date;
 
 }
+type UserPayload = AuthPayload ;
+
 // توثيق الدخول
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -22,7 +24,7 @@ res.status(401).json({ message: "Unauthorized" });
   try {
 const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload;
     
-req.user = decoded;
+(req as any).user = decoded as UserPayload;
     next();
   } catch (err) {
     res.status(403).json({ message: "Invalid token" });
