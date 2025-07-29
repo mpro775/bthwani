@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import DeliveryCart from "../../models/delivry_Marketplace_V1/DeliveryCart";
 import { User } from "../../models/user";
+// @ts-ignore
 import geolib from "geolib";
 import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
 import PricingStrategy from "../../models/delivry_Marketplace_V1/PricingStrategy";
