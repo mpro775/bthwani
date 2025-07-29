@@ -1,5 +1,6 @@
 import { Schema, model, Document } from "mongoose";
-import bcrypt from "bcrypt";
+import bcrypt from 'bcryptjs';
+
 
 // 1. Enum لأسماء الأقسام (Modules)
 export enum ModuleName {
