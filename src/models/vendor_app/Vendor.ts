@@ -3,16 +3,16 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IVendor extends Document {
   fullName: string;
   phone: string;
-  email?: string;
   password: string;
 
   store: mongoose.Types.ObjectId;    // المتجر الذي يديره
   isActive: boolean;                 // مفعل/موقوف
+  email?: string;
 
   // إحصائيات مبسطة للتاجر
   salesCount: number;                // عدد المبيعات
   totalRevenue: number;              // إجمالي الإيرادات
-
+ expoPushToken: string,
   createdAt: Date;
 }
 
@@ -27,6 +27,7 @@ const VendorSchema = new Schema<IVendor>({
 
   salesCount:   { type: Number, default: 0 },
   totalRevenue: { type: Number, default: 0 },
+   expoPushToken: { type: String, default: null },
 }, { timestamps: true });
 
 export default mongoose.model<IVendor>("Vendor", VendorSchema);

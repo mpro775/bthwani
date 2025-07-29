@@ -25,26 +25,32 @@ interface IStatusHistoryEntry {
 interface ISubOrder {
   store: Types.ObjectId;
   items: {
-    product: Types.ObjectId;
-    quantity: number;
-    unitPrice: number;
+  product: Types.ObjectId;
+  productType: string; // أو enum لو تحب
+  quantity: number;
+  unitPrice: number;
+
   }[];
   driver?: Types.ObjectId;
   deliveryReceiptNumber?: string; // رقم السند
 
   status: OrderStatus;
   statusHistory: IStatusHistoryEntry[];
+}export interface IOrderItem {
+  productType: "merchantProduct" | "deliveryProduct";
+  productId: mongoose.Types.ObjectId;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  store: mongoose.Types.ObjectId;
+  image?: string;
 }
 
 export interface IDeliveryOrder extends Document {
   user: Types.ObjectId;
   driver?: Types.ObjectId;
-  items: {
-    product: Types.ObjectId;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-  }[];
+  items: IOrderItem[];
+
   subOrders: ISubOrder[];
   price: number;
   deliveryFee: number;
@@ -54,7 +60,8 @@ export interface IDeliveryOrder extends Document {
   walletUsed: number;
   cashDue: number;
   statusHistory: IStatusHistoryEntry[];
-
+createdAt?: Date;
+updatedAt?: Date;
   address: {
     label: string;
     street: string;
@@ -62,7 +69,7 @@ export interface IDeliveryOrder extends Document {
     location: { lat: number; lng: number };
   };
   deliveryMode: "unified" | "split";
-  paymentMethod: "wallet" | "cod";
+  paymentMethod: "wallet" | "card"|"cash"|"mixed";
   paid: boolean;
   status: OrderStatus;
   returnReason?: string; // سبب الارجاع/الإلغاء
@@ -99,20 +106,20 @@ const ratingSchema = new Schema<IRating>(
 );
 const orderSchema = new Schema<IDeliveryOrder>(
   {
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+user: { type: Schema.Types.ObjectId, ref: "User" },
     driver: { type: Schema.Types.ObjectId, ref: "Driver" },
-    items: [
-      {
-        product: {
-          type: Schema.Types.ObjectId,
-          ref: "DeliveryProduct",
-          required: true,
-        },
-        name: { type: String, required: true },
-        quantity: { type: Number, required: true },
-        unitPrice: { type: Number, required: true },
-      },
-    ],
+   items: [
+  {
+    productType: { type: String, enum: ["merchantProduct", "deliveryProduct"], required: true },
+    productId:   { type: Schema.Types.ObjectId, required: true },
+    name:        { type: String, required: true },
+    quantity:    { type: Number, required: true },
+    unitPrice:   { type: Number, required: true },
+    store:       { type: Schema.Types.ObjectId, ref: "DeliveryStore", required: true },
+    image:       { type: String },
+  },
+],
+
     subOrders: [
       {
         store: {
@@ -121,16 +128,13 @@ const orderSchema = new Schema<IDeliveryOrder>(
           required: true,
         },
         items: [
-          {
-            product: {
-              type: Schema.Types.ObjectId,
-              ref: "DeliveryProduct",
-              required: true,
-            },
-            quantity: Number,
-            unitPrice: Number,
-          },
-        ],
+  {
+    product: { type: Schema.Types.ObjectId, required: true },
+    productType: { type: String, required: true }, // أضف هذا
+    quantity: Number,
+    unitPrice: Number,
+  }
+],
         driver: { type: Schema.Types.ObjectId, ref: "Driver" },
         status: {
           type: String,
@@ -198,7 +202,11 @@ const orderSchema = new Schema<IDeliveryOrder>(
       enum: ["unified", "split"],
       default: "split",
     },
-    paymentMethod: { type: String, enum: ["wallet", "cod"], required: true },
+paymentMethod: {
+  type: String,
+  enum: ["cash", "wallet", "card", "mixed"], // <-- أضف "mixed"
+  required: true,
+},
     paid: { type: Boolean, default: false },
     status: {
       type: String,

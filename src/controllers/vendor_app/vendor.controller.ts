@@ -4,6 +4,36 @@ import mongoose from "mongoose";
 import Vendor, { IVendor } from "../../models/vendor_app/Vendor";
 import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
 import Order from "../../models/delivry_Marketplace_V1/Order";
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+export const vendorLogin = async (req, res) => {
+  const { phone, password } = req.body;
+    console.log('بيانات الدخول:', phone, password);
+
+  if (!phone || !password) {
+     res.status(400).json({ error: "رقم الهاتف وكلمة المرور مطلوبة" });
+     return;
+  }
+
+  // ابحث عن التاجر برقم الجوال
+  const vendor = await Vendor.findOne({ phone });
+  if (!vendor) {
+res.status(400).json({ error: 'رقم الهاتف غير صحيح' });
+    return;
+  } 
+
+  // تحقق من كلمة المرور
+  const isMatch = await bcrypt.compare(password, vendor.password);
+  if (!isMatch) {
+res.status(400).json({ error: 'كلمة المرور غير صحيحة' });
+    return;
+  } 
+
+  // إصدار توكن JWT
+  const token = jwt.sign({ id: vendor._id, role: 'vendor' }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  res.json({ token, vendor });
+};
 
 // جلب بيانات التاجر (Vendor) بناءً على الـ userId الموجود في الـ JWT
 export const getMyProfile = async (req: Request, res: Response) => {

@@ -1,20 +1,18 @@
 // src/routes/deliveryMarketplaceV1/deliveryOrderRoutes.ts
 
-import express, { NextFunction, Request, Response } from "express";
+import express, {  Request, Response } from "express";
 import * as controller from "../../controllers/delivry_Marketplace_V1/DeliveryOrderController";
 import { verifyAdmin } from "../../middleware/verifyAdmin";
-import { verifyAdminOrDriver } from "../../middleware/verifyAdminOrDriver";
 import { verifyFirebase } from "../../middleware/verifyFirebase";
-import { body, validationResult } from "express-validator";
 import Order from "../../models/delivry_Marketplace_V1/Order";
-import { requireRole } from "../../middleware/auth";
 import { authVendor } from "../../middleware/authVendor";
 import { driverDeliver, driverPickUp } from "../../controllers/delivry_Marketplace_V1/orderDriver";
 import { getDeliveryFee } from "../../controllers/delivry_Marketplace_V1/DeliveryCartController";
 import { rateOrder } from "../../controllers/delivry_Marketplace_V1/orderRating";
+import Vendor from "../../models/vendor_app/Vendor";
+import { verifyVendorJWT } from "../../middleware/verifyVendorJWT";
 
 const router = express.Router();
-router.use(verifyFirebase);
 
 
 
@@ -132,23 +130,46 @@ router.put(
   controller.vendorAcceptOrder
 );
 router.post("/:id/rate", verifyFirebase, rateOrder);
+router.get('/export/orders/excel', controller.exportOrdersToExcel);
+router.get("/me", verifyFirebase, controller.getUserOrders);
 
 router.patch("/:id/driver-pickup", driverPickUp);
 router.patch("/:id/admin-status",verifyFirebase,verifyAdmin, controller.adminChangeStatus);
 router.patch("/:id/driver-deliver", driverDeliver);
 router.get(
-  "/vendor/orders",
-  requireRole(["vendor"]),
+  "/vendor/orders",verifyVendorJWT,
+
   async (req: Request, res: Response) => {
     try {
-      const vendorId = req.user.id;
-      const orders = await Order.find({ "subOrders.storeId": vendorId });
+      // 1. جلب التاجر الحالي من خلال التوكن
+      const vendor = await Vendor.findById(req.user.id).lean();
+      if (!vendor) {
+         res.status(404).json({ message: "التاجر غير موجود" });
+         return;
+      }
+
+      // 2. جلب معرف المتجر الخاص بالتاجر
+      const storeId = vendor.store;
+      if (!storeId) {
+         res.status(404).json({ message: "لا يوجد متجر مرتبط بهذا التاجر" });
+         return;
+      }
+
+      // 3. جلب جميع الطلبات التي تحتوي على subOrder خاص بمتجر هذا التاجر
+  const orders = await Order.find({
+  "subOrders.store": storeId
+})
+.populate("subOrders.store", "name logo address") // يظهر معلومات المتجر
+.sort({ createdAt: -1 })
+.lean();
+
       res.json(orders);
-    } catch (err) {
-      res.status(500).json({ message: "Server error", error: err });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "خطأ بالخادم" });
     }
   }
 );
+
 
 router.get("/fee", getDeliveryFee);
 

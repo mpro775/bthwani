@@ -20,6 +20,7 @@ export interface Wallet {
   lastUpdated: Date;
   loyaltyPoints:number;
   escrow:number;
+  savings:number;
 }
 
 export interface Security {

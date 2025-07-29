@@ -5,6 +5,7 @@ export interface IDeliveryProduct extends Document {
   subCategory?: mongoose.Types.ObjectId;
   name: string;
   description?: string;
+  section?:  mongoose.Types.ObjectId;
   price: number;
   image?: string;
   isAvailable: boolean;
@@ -20,6 +21,8 @@ const productSchema = new Schema<IDeliveryProduct>({
   image:        { type: String },
   isAvailable:  { type: Boolean, default: true },
   isDailyOffer: { type: Boolean, default: false },
+  section: { type: Schema.Types.ObjectId, ref: "StoreSection" }
+
 }, { timestamps: true });
 
 export default mongoose.model<IDeliveryProduct>(

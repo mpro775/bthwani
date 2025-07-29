@@ -62,16 +62,23 @@ export const updateLocation = async (req: Request, res: Response) => {
   const driver = await Driver.findByIdAndUpdate(
     req.user.id,
     {
+      // تحديث currentLocation القديم (إبق عليه لو تريد عرض آخر موقع)
       currentLocation: {
         lat,
         lng,
         updatedAt: new Date(),
+      },
+      // تحديث الحقل الجديد location
+      location: {
+        type: "Point",
+        coordinates: [lng, lat], // GeoJSON expects [lng, lat]
       },
     },
     { new: true }
   );
   res.json(driver);
 };
+
 
 export const updateAvailability = async (req: Request, res: Response) => {
   const { isAvailable } = req.body;

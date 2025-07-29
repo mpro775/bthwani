@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
-import DeliveryOrder, { OrderStatus } from "../../models/delivry_Marketplace_V1/Order";
+import DeliveryOrder, {
+  OrderStatus,
+} from "../../models/delivry_Marketplace_V1/Order";
 import DeliveryCart from "../../models/delivry_Marketplace_V1/DeliveryCart";
 import { User } from "../../models/user";
 import mongoose from "mongoose";
@@ -7,7 +9,7 @@ import { io } from "../..";
 import DeliveryStore from "../../models/delivry_Marketplace_V1/DeliveryStore";
 import Driver from "../../models/Driver_app/driver";
 import { calculateDeliveryPrice } from "../../utils/deliveryPricing";
-import geolib from "geolib";
+import { getDistance } from "geolib";
 import PricingStrategy from "../../models/delivry_Marketplace_V1/PricingStrategy";
 
 export const createOrder = async (req: Request, res: Response) => {
@@ -24,9 +26,10 @@ export const createOrder = async (req: Request, res: Response) => {
     if (!user) throw new Error("المستخدم غير موجود");
 
     // 2. جلب سلة المشتريات
-    const cart = await DeliveryCart.findOne({ userId: user._id }).session(
+    const cart = await DeliveryCart.findOne({ user: user._id }).session(
       session
     );
+
     if (!cart || cart.items.length === 0) throw new Error("السلة فارغة");
 
     // 3. بيانات الطلب الواردة
@@ -51,7 +54,7 @@ export const createOrder = async (req: Request, res: Response) => {
       throw new Error("العنوان غير صالح");
 
     // 5. تحقق من رصيد المحفظة إذا كان الدفع Wallet
-   
+
     // 6. تجميع العناصر بحسب المتجر
     const grouped: Record<string, typeof cart.items> = {};
     for (const item of cart.items) {
@@ -72,13 +75,11 @@ export const createOrder = async (req: Request, res: Response) => {
       const s = await DeliveryStore.findById(stores[0]).session(session);
       if (!s) throw new Error("المتجر غير موجود");
       const distKm =
-        geolib.getDistance(
-          { latitude: s.location.lat, longitude: s.location.lng },
-          {
-            latitude: chosenAddress.location.lat,
-            longitude: chosenAddress.location.lng,
-          }
-        ) / 1000;
+      getDistance(
+  { latitude: s.location.lat, longitude: s.location.lng },
+  { latitude: chosenAddress.location.lat, longitude: chosenAddress.location.lng }
+)
+/ 1000;
       deliveryFee = calculateDeliveryPrice(distKm, strategy);
     } else {
       // لكل متجر ضمن السلة
@@ -86,7 +87,7 @@ export const createOrder = async (req: Request, res: Response) => {
         const s = await DeliveryStore.findById(storeId).session(session);
         if (!s) throw new Error(`المتجر ${storeId} غير موجود`);
         const distKm =
-          geolib.getDistance(
+          getDistance(
             { latitude: s.location.lat, longitude: s.location.lng },
             {
               latitude: chosenAddress.location.lat,
@@ -96,8 +97,6 @@ export const createOrder = async (req: Request, res: Response) => {
         deliveryFee += calculateDeliveryPrice(distKm, strategy);
       }
     }
-
-    
 
     // 9. إعداد subOrders واختيار السائق
     let commonDriver = null;
@@ -147,7 +146,8 @@ export const createOrder = async (req: Request, res: Response) => {
         return {
           store: storeId,
           items: items.map((i) => ({
-            product: i.product,
+            product: i.productId, // هذا هو المعرف
+            productType: i.productType, // أضف هذا السطر
             quantity: i.quantity,
             unitPrice: i.price,
           })),
@@ -174,17 +174,17 @@ export const createOrder = async (req: Request, res: Response) => {
     }
 
     // 11. المبلغ النهائي
-const totalPrice = cart.total + deliveryFee;
+    const totalPrice = cart.total + deliveryFee;
 
-// احسب الدفع من المحفظة وباقي الكاش
-const walletUsed = Math.min(user.wallet.balance, totalPrice);
-const cashDue    = totalPrice - walletUsed;
+    // احسب الدفع من المحفظة وباقي الكاش
+    const walletUsed = Math.min(user.wallet.balance, totalPrice);
+    const cashDue = totalPrice - walletUsed;
 
-// خصم الرصيد
-if (walletUsed > 0) {
-  user.wallet.balance -= walletUsed;
-  await user.save({ session });
-}
+    // خصم الرصيد
+    if (walletUsed > 0) {
+      user.wallet.balance -= walletUsed;
+      await user.save({ session });
+    }
 
     // 12. خصم من المحفظة
     if (paymentMethod === "wallet") {
@@ -212,13 +212,13 @@ if (walletUsed > 0) {
       companyShare: totalCompanyShare,
       platformShare: totalPlatformShare,
       notes,
-        walletUsed,
+      walletUsed,
 
-        cashDue,
+      cashDue,
 
-  paymentMethod: cashDue > 0 ? "mixed" : "wallet",
+      paymentMethod: cashDue > 0 ? "mixed" : "wallet",
       status: "pending_confirmation",
-  paid: paymentMethod === "wallet" || cashDue === 0,
+      paid: paymentMethod === "wallet" || cashDue === 0,
     });
 
     await order.save({ session });
@@ -269,6 +269,8 @@ export const vendorAcceptOrder = async (req: Request, res: Response) => {
     return;
   }
 
+
+
   // اختيار أقرب سائق
   const driver = await Driver.findOne({
     isAvailable: true,
@@ -300,18 +302,40 @@ export const vendorAcceptOrder = async (req: Request, res: Response) => {
   // تسجيل التاريخ وتحويل الحالة
   order.status = "preparing";
   order.statusHistory.push({
-    status:    "preparing",
+    status: "preparing",
     changedAt: new Date(),
     changedBy: "store",
   });
 
   // إذا تُريد تسجيل وقت التعيين:
   order.assignedAt = new Date();
-    await order.save();
+  await order.save();
 
   res.json(order);
   return;
 };
+
+export const exportOrdersToExcel = async (req, res: Response) => {
+  try {
+    const orders = await DeliveryOrder.find()
+      .populate({ path: 'user', select: 'fullName phone' })
+      .lean();
+
+    // const excelData = orders.map((order) => ({
+    //   OrderID: order._id.toString(),
+    //   Status: order.status,
+    //   Customer: order.user?.fullName || '', // ✅ الآن تعمل
+    //   Phone: order.user?.phone || '',
+    //   Amount: order.price,
+    //   Date: new Date(order.createdAt).toLocaleString('ar-YE'),
+    // }));
+
+    // باقي الكود نفسه...
+  } catch (error) {
+    res.status(500).json({ message: 'فشل التصدير', error });
+  }
+};
+
 // PATCH /orders/:id/admin-status
 export const adminChangeStatus = async (req: Request, res: Response) => {
   const { status, reason, returnBy } = req.body;
@@ -342,9 +366,9 @@ export const adminChangeStatus = async (req: Request, res: Response) => {
 
   const order = await DeliveryOrder.findById(req.params.id);
   if (!order) {
-res.status(404).json({ message: "Order not found" });
+    res.status(404).json({ message: "Order not found" });
     return;
-  } 
+  }
 
   // تسجيل التاريخ
   order.status = status as OrderStatus;
@@ -357,15 +381,15 @@ res.status(404).json({ message: "Order not found" });
   // إدارة سبب الإرجاع/الإلغاء
   if (status === "returned" || status === "cancelled") {
     order.returnReason = reason || "بدون تحديد";
-    order.returnBy     = returnBy || "admin";
+    order.returnBy = returnBy || "admin";
   } else {
     order.returnReason = undefined;
-    order.returnBy     = undefined;
+    order.returnBy = undefined;
   }
 
   await order.save();
-   res.json(order);
-   return;
+  res.json(order);
+  return;
 };
 export const cancelOrder = async (req: Request, res: Response) => {
   try {
@@ -411,11 +435,15 @@ export const cancelOrder = async (req: Request, res: Response) => {
     return;
   }
 };
+
 export const getUserOrders = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const orders = await DeliveryOrder.find({ userId }).sort({ createdAt: -1 });
+    const orders = await DeliveryOrder.find({ user: userId }).sort({ createdAt: -1 });
+    console.log("Request for orders of user:", userId);
+console.log("Found", orders.length, "orders");
     res.json(orders);
+    
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -473,7 +501,7 @@ export const repeatOrder = async (req: Request, res: Response) => {
       const store = await DeliveryStore.findById(so.store).session(session);
       if (!store) continue;
       const distKm =
-        geolib.getDistance(
+        getDistance(
           { latitude: store.location.lat, longitude: store.location.lng },
           {
             latitude: oldOrder.address.location.lat,
@@ -540,9 +568,9 @@ export const repeatOrder = async (req: Request, res: Response) => {
 export const getOrderById = async (req: Request, res: Response) => {
   try {
     const order = await DeliveryOrder.findById(req.params.id)
-      .populate("userId", "name")
+  .populate({ path: 'user', select: 'fullName phone' }) // اسم الحقل كما في السكيمة
       .populate("storeId", "name")
-      .populate("driverId", "name");
+  .populate({ path: 'driver', select: 'fullName phone' }); // إذا احتجت بيانات السائق
 
     if (!order) {
       res.status(404).json({ message: "الطلب غير موجود" });
@@ -564,9 +592,9 @@ export const getAllOrders = async (req: Request, res: Response) => {
 
     const orders = await DeliveryOrder.find(filter)
       .sort({ createdAt: -1 })
-      .populate("userId", "name")
+  .populate({ path: 'user', select: 'fullName phone' }) // اسم الحقل كما في السكيمة
       .populate("storeId", "name")
-      .populate("driverId", "name");
+  .populate({ path: 'driver', select: 'fullName phone' }); // إذا احتجت بيانات السائق
 
     res.json(orders);
   } catch (error: any) {

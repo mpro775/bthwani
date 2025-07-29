@@ -1,8 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICartItem {
-  product: mongoose.Types.ObjectId;
-  name: string;
+  productType: "merchantProduct" | "deliveryProduct"; // ...أي أنواع أخرى مستقبلاً
+  productId: mongoose.Types.ObjectId;
+    name: string;
 
   price: number;
   quantity: number;
@@ -13,7 +14,6 @@ export interface ICartItem {
 export interface ICart extends Document {
   user: mongoose.Types.ObjectId;
   items: ICartItem[];
-  store: mongoose.Types.ObjectId;
   total: number;
     cartId: string; // أضف هذا الحقل
   note?:string;
@@ -21,8 +21,9 @@ export interface ICart extends Document {
 }
 
 const cartItemSchema = new Schema<ICartItem>({
-  product:  { type: Schema.Types.ObjectId, ref: "DeliveryProduct", required: true },
-  name:     { type: String, required: true },
+productType: { type: String, enum: ["merchantProduct", "deliveryProduct", "restaurantProduct"], required: true },
+  productId:   { type: Schema.Types.ObjectId, required: true },
+    name:     { type: String, required: true },
 
   price:    { type: Number, required: true },
   quantity: { type: Number, required: true },
@@ -33,11 +34,9 @@ const cartItemSchema = new Schema<ICartItem>({
 const cartSchema = new Schema<ICart>({
   user:  { type: Schema.Types.ObjectId, ref: "User", required: true },
   items: { type: [cartItemSchema], default: [] },
-  store: { type: Schema.Types.ObjectId, ref: "DeliveryStore", required: true },
   total: { type: Number, required: true },
-      cartId: { type: String, required: false }, // أضف هذا الحقل
-  note:  { type: String, required: false }, // <--- هنا
-
+  cartId: { type: String, required: false },
+  note:  { type: String, required: false },
 }, { timestamps: true });
 
 cartSchema.index({ user: 1 });

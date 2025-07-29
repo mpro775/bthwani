@@ -5,6 +5,7 @@ export interface IDeliveryCategory extends Document {
   image?: string;
   description?: string;
   isActive:boolean;
+  usageType:string;
   parent?: mongoose.Types.ObjectId;           // فئة أصلية (للتصنيفات المتداخلة)
 }
 
@@ -13,6 +14,7 @@ const deliveryCategorySchema = new Schema<IDeliveryCategory>({
   image:       { type: String },
   description: { type: String },
   isActive: { type: Boolean, default: true },
+  usageType:   { type: String, enum: ["grocery", "restaurant", "retail"], required: true },
 
   parent:      { type: Schema.Types.ObjectId, ref: "DeliveryCategory" },
 }, { timestamps: true });

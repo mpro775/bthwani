@@ -1,7 +1,10 @@
 // src/models/Driver_app/driver.ts
 
 import mongoose, { Document, Schema, Types } from "mongoose";
-
+export interface IGeoPoint {
+  type: "Point";
+  coordinates: [number, number]; // [lng, lat]
+}
 export interface IOtherLocation {
   label:     string;
   lat:       number;
@@ -17,6 +20,7 @@ export interface IDriver extends Document {
   email:    string;
   password: string;
   phone:    string;
+  location: IGeoPoint;
 
   role: "rider_driver" | "light_driver" | "women_driver";
 
@@ -101,7 +105,19 @@ const DriverSchema = new Schema<IDriver>(
       required: true,
       default: "primary"
     },
-
+location: {
+  type: {
+    type: String,
+    enum: ["Point"],
+    default: "Point",
+    required: true
+  },
+  coordinates: {
+    type: [Number], // [lng, lat]
+    required: true,
+    default: [0, 0]
+  }
+},
     isAvailable:    { type: Boolean, default: true },
     isFemaleDriver: { type: Boolean, default: false },
     isVerified:     { type: Boolean, default: false },
@@ -143,3 +159,4 @@ const DriverSchema = new Schema<IDriver>(
 );
 
 export default mongoose.model<IDriver>("Driver", DriverSchema);
+DriverSchema.index({ location: "2dsphere" });

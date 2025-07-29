@@ -44,6 +44,8 @@ import leaveRequestRoutes from "./routes/er/leaveRequest.routes";
 import performanceGoalRoutes from "./routes/er/performanceGoal.routes";
 import pricingStrategyRoutes from "./routes/delivry_marketplace_v1/pricingStrategy";
 import deliveryPromotionRoutes from "./routes/delivry_marketplace_v1/promotion.routes";
+import groceriesRoutes from "./routes/marchent/api";
+import storeSectionRoutes from "./routes/delivry_marketplace_v1/storeSection.routes";
 
 dotenv.config();
 
@@ -129,6 +131,9 @@ app.use(`${API_PREFIX}/delivery/order`, deliveryOrderRoutes);
 app.use(`${API_PREFIX}/delivery/subcategories`, deliverySubCategoryRoutes);
 app.use(`${API_PREFIX}/delivery/banners`, deliveryBannerRoutes);
 app.use(`${API_PREFIX}/delivery/promotions`, deliveryPromotionRoutes);
+app.use(`${API_PREFIX}/delivery/sections`, storeSectionRoutes);
+
+app.use(`${API_PREFIX}/groceries`, groceriesRoutes);
 
 // قسم طلبات وسائق التوصيل
 app.use(`${API_PREFIX}/deliveryapp/withdrawals`, driverWithdrawalRoutes);

@@ -64,12 +64,13 @@ export const create = async (req: Request, res: Response) => {
     ) {
       body.pricingStrategy = null;
     }
-if ("isTrending" in body) body.isTrending = !!body.isTrending;
-if ("isFeatured" in body) body.isFeatured = !!body.isFeatured;
-if ("pricingStrategyType" in body) body.pricingStrategyType = body.pricingStrategyType || "";
+    if ("isTrending" in body) body.isTrending = !!body.isTrending;
+    if ("isFeatured" in body) body.isFeatured = !!body.isFeatured;
+    if ("pricingStrategyType" in body)
+      body.pricingStrategyType = body.pricingStrategyType || "";
 
-if ("commissionRate" in body) body.commissionRate = parseFloat(body.commissionRate) || 0;
-
+    if ("commissionRate" in body)
+      body.commissionRate = parseFloat(body.commissionRate) || 0;
 
     const data = new DeliveryStore(body);
     await data.save();
@@ -92,7 +93,7 @@ export const getAll = async (req: Request, res: Response) => {
 
     // Fetch stores
     const stores = await DeliveryStore.find(filter)
-      .populate("category", "name")
+      .populate("category")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -119,7 +120,9 @@ export const getAll = async (req: Request, res: Response) => {
 // Read a single delivery store by ID
 export const getById = async (req: Request, res: Response) => {
   try {
-    const store = await DeliveryStore.findById(req.params.id).lean();
+    const store = await DeliveryStore.findById(req.params.id)
+      .populate("category", "name usageType")
+      .lean();
     if (!store) {
       res.status(404).json({ message: "Not found" });
       return;
