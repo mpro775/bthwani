@@ -38,7 +38,7 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-  "start": "dir node_modules/geolib && node dist/index.js",
+    "start": "dir node_modules/geolib && node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc"
   },
