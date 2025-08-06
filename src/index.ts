@@ -46,6 +46,7 @@ import pricingStrategyRoutes from "./routes/delivry_marketplace_v1/pricingStrate
 import deliveryPromotionRoutes from "./routes/delivry_marketplace_v1/promotion.routes";
 import groceriesRoutes from "./routes/marchent/api";
 import storeSectionRoutes from "./routes/delivry_marketplace_v1/storeSection.routes";
+import chartAccountRoutes from "./routes/er/chartAccount.routes";
 
 dotenv.config();
 
@@ -110,6 +111,7 @@ app.use(`${API_PREFIX}/employees`, employeeRoutes);
 app.use(`${API_PREFIX}/attendance`, attendanceRoutes);
 app.use(`${API_PREFIX}/leaves`, leaveRequestRoutes);
 app.use(`${API_PREFIX}/goals`, performanceGoalRoutes);
+app.use(`${API_PREFIX}/accounts/chart`, chartAccountRoutes);
 app.use(`${API_PREFIX}/admin/notifications`, adminNotificationRoutes);
 // قسم شحن المحفظة
 app.use(`${API_PREFIX}/topup`, topupRoutes);
