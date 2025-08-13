@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import Order from "../../models/delivry_Marketplace_V1/Order";
 import Driver from "../../models/Driver_app/driver";    // ← هذا الاستيراد مطلوب
+import InvoiceBook from "../../models/Driver_app/invoiceBook";
 
 export const createDriver = async (req: Request, res: Response) => {
   try {
@@ -14,6 +15,7 @@ export const createDriver = async (req: Request, res: Response) => {
       vehicleType,
       isFemaleDriver,
       driverType,          // "primary" | "joker"
+      depositPaid = 0,
       // بيانات العنوان ضرورية الآن
       residenceLocation: {
         address,
@@ -37,7 +39,9 @@ export const createDriver = async (req: Request, res: Response) => {
       // يوثق تلقائيًا لأن الإنشاء من الأدمن
       isVerified: true,
       // ملء residenceLocation من البودي
-      residenceLocation: { address, governorate, city, lat, lng }
+      residenceLocation: { address, governorate, city, lat, lng },
+      depositPaid,
+      depositCurrent: depositPaid
     });
 
     res.status(201).json(driver);
@@ -147,6 +151,26 @@ export const updateWallet = async (req: Request, res: Response) => {
   res.json({ message: "Wallet updated", balance: driver.wallet.balance });
 };
 
+export const resetDeposit = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { amount } = req.body;
+  const driver = await Driver.findById(id);
+  if (!driver) {
+    res.status(404).json({ message: 'Driver not found' });
+    return;
+  }
+
+  if (amount !== undefined) {
+    driver.depositPaid = amount;
+    driver.depositCurrent = amount;
+  } else {
+    driver.depositCurrent = driver.depositFixedByAdmin ? driver.depositAmount : driver.depositPaid;
+  }
+  await driver.save();
+
+  res.json({ depositCurrent: driver.depositCurrent });
+};
+
 export const assignDriver = async (req: Request, res: Response) => {
   const { driverId, orderId } = req.body;
   const driver = await Driver.findById(driverId);
@@ -168,4 +192,24 @@ export const assignDriver = async (req: Request, res: Response) => {
   await order.save();
 
   res.json({ message: "Driver assigned", order });
+};
+
+export const assignInvoiceBook = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { bookNumber } = req.body;
+  const driver = await Driver.findById(id);
+  if (!driver) {
+    res.status(404).json({ message: 'Driver not found' });
+    return;
+  }
+  const book = await InvoiceBook.create({
+    bookNumber,
+    startNumber: 1,
+    endNumber: 25,
+    assignedTo: driver._id,
+    status: 'active',
+  });
+  driver.currentBook = book._id;
+  await driver.save();
+  res.status(201).json(book);
 };

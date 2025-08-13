@@ -63,6 +63,12 @@ export interface IDriver extends Document {
     totalDistanceKm: number;
   };
 
+  depositPaid:      number;
+  depositCurrent:   number;
+  depositFixedByAdmin?: boolean;
+  depositAmount?: number;
+  currentBook?: Types.ObjectId;
+
   // حقول متعلقة فقط إذا كان من نوع "joker"
   jokerFrom?: Date;
   jokerTo?:   Date;
@@ -144,6 +150,12 @@ location: {
       earnings:    { type: Number, default: 0 },
       lastUpdated: { type: Date,   default: Date.now }
     },
+
+    depositPaid:    { type: Number, default: 0 },
+    depositCurrent: { type: Number, default: 0 },
+    depositFixedByAdmin: { type: Boolean, default: false },
+    depositAmount: { type: Number, default: 0 },
+    currentBook: { type: Schema.Types.ObjectId, ref: 'InvoiceBook' },
 
     deliveryStats: {
       deliveredCount:  { type: Number, default: 0 },
